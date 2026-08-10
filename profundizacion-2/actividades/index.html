@@ -269,8 +269,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 }
 
 /* ── añadido: una sola diapositiva ─────────────────────────── */
-/* Con una sola <section class="slide"> el cromo de navegación no pinta
-   nada. En cuanto añadas la segunda, vuelve solo. */
+/* Con una sola diapositiva el cromo de navegación no pinta nada. En cuanto
+   añadas la segunda sección .slide, vuelve solo. */
 body:not(:has(.slide:nth-of-type(2))) #progress,
 body:not(:has(.slide:nth-of-type(2))) .progress-num,
 body:not(:has(.slide:nth-of-type(2))) #dots,
@@ -295,9 +295,9 @@ body:not(:has(.slide:nth-of-type(2))) #navHint{display:none}
   text-transform:uppercase;color:var(--c,var(--accent))}
 /* listado de archivos: sin icono, la tarjeta se ajusta a su texto, y con
    una o dos se centran en vez de estirarse a todo el ancho */
-.menu.lista .tarjeta{min-height:0;gap:10px}
+.menu.archivos .tarjeta{min-height:0;gap:10px}
 .menu.una{max-width:420px;margin-left:auto;margin-right:auto}
-.menu.dos{max-width:860px;margin-left:auto;margin-right:auto}
+.menu.dos,.menu.cuatro{max-width:860px;margin-left:auto;margin-right:auto}
 .menu .entrar .arr{transition:transform .25s var(--spring)}
 .menu .tarjeta:hover .entrar .arr{transform:translateX(6px)}
 @media(prefers-reduced-motion:reduce){.menu .entrar .arr{transition:none}}
@@ -334,11 +334,31 @@ body:not(:has(.slide:nth-of-type(2))) #navHint{display:none}
       <p class="eyebrow">Profundización II · Nivel 02</p>
       <h1 class="titular">Actividades <em>interactivas</em></h1>
       <p class="bajada">Juegos y talleres para hacer en clase.</p>
-      <div class="vacio">
-        <b>Todavía no hay nada aquí</b>
-        Esta carpeta está lista para recibir archivos. Cuando añadas uno,
-        cuélgalo de esta misma página como una tarjeta más.
-        <span class="mono">profundizacion-2/actividades/</span>
+      <div class="rejilla menu archivos" style="--min:288px">
+        <a class="tarjeta barra viva" href="1_metodo-cientifico.html">
+          <div class="cabeza">
+            <h4>Ordena el método</h4>
+            <span class="mono">Taller 01</span>
+          </div>
+          <p>Quince términos. Seis son etapas del método y van en un único orden.</p>
+          <span class="entrar">Entrar <span class="arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tarjeta barra viva" href="2_investigacion-tipos-niveles.html">
+          <div class="cabeza">
+            <h4>Arma el esquema</h4>
+            <span class="mono">Taller 02</span>
+          </div>
+          <p>Once términos: dos tipos, cinco niveles y cuatro que no pertenecen.</p>
+          <span class="entrar">Entrar <span class="arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tarjeta barra viva" href="3_juego-clasificar-variables.html">
+          <div class="cabeza">
+            <h4>Clasifica las variables</h4>
+            <span class="mono">Taller 03</span>
+          </div>
+          <p>Cada término a su casilla: numérica continua o discreta, categórica nominal u ordinal.</p>
+          <span class="entrar">Entrar <span class="arr" aria-hidden="true">→</span></span>
+        </a>
       </div>
       <a class="volver" href="../index.html"><span aria-hidden="true">←</span> Volver a Profundización II</a>
     </div>

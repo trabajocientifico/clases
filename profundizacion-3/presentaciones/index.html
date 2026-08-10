@@ -269,8 +269,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 }
 
 /* ── añadido: una sola diapositiva ─────────────────────────── */
-/* Con una sola <section class="slide"> el cromo de navegación no pinta
-   nada. En cuanto añadas la segunda, vuelve solo. */
+/* Con una sola diapositiva el cromo de navegación no pinta nada. En cuanto
+   añadas la segunda sección .slide, vuelve solo. */
 body:not(:has(.slide:nth-of-type(2))) #progress,
 body:not(:has(.slide:nth-of-type(2))) .progress-num,
 body:not(:has(.slide:nth-of-type(2))) #dots,
@@ -295,9 +295,9 @@ body:not(:has(.slide:nth-of-type(2))) #navHint{display:none}
   text-transform:uppercase;color:var(--c,var(--accent))}
 /* listado de archivos: sin icono, la tarjeta se ajusta a su texto, y con
    una o dos se centran en vez de estirarse a todo el ancho */
-.menu.lista .tarjeta{min-height:0;gap:10px}
+.menu.archivos .tarjeta{min-height:0;gap:10px}
 .menu.una{max-width:420px;margin-left:auto;margin-right:auto}
-.menu.dos{max-width:860px;margin-left:auto;margin-right:auto}
+.menu.dos,.menu.cuatro{max-width:860px;margin-left:auto;margin-right:auto}
 .menu .entrar .arr{transition:transform .25s var(--spring)}
 .menu .tarjeta:hover .entrar .arr{transform:translateX(6px)}
 @media(prefers-reduced-motion:reduce){.menu .entrar .arr{transition:none}}

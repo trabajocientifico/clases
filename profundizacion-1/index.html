@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profundización I</title>
-<meta name="description" content="Materiales de la Profundización I.">
+<meta name="description" content="Profundización I: presentaciones temáticas y actividades interactivas.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -278,7 +278,31 @@ body:not(:has(.slide:nth-of-type(2))) #prev,
 body:not(:has(.slide:nth-of-type(2))) #next,
 body:not(:has(.slide:nth-of-type(2))) #navHint{display:none}
 
-/* ── añadido: botón de vuelta al índice ────────────────────── */
+/* ── añadido: menú de rutas ────────────────────────────────── */
+.menu{width:100%;margin-top:clamp(18px,4vh,36px)}
+.menu .tarjeta{gap:12px;padding:clamp(20px,2.4vw,28px);text-align:left;
+  text-decoration:none;color:inherit;min-height:clamp(196px,25vh,252px)}
+.menu .tarjeta:focus-visible{outline:2px solid var(--c,var(--accent));outline-offset:4px}
+.menu .num{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;
+  font-family:var(--serif);font-size:22px;font-weight:900;
+  background:var(--blue-14);color:var(--c,var(--accent))}
+.menu .icono{width:52px;height:52px;border-radius:15px}
+.menu .icono svg{width:25px;height:25px}
+.menu h4{font-size:clamp(19px,2.1vw,25px)}
+.menu p{font-size:14.5px}
+.menu .entrar{margin-top:auto;display:inline-flex;align-items:center;gap:9px;
+  font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--c,var(--accent))}
+/* listado de archivos: sin icono, la tarjeta se ajusta a su texto, y con
+   una o dos se centran en vez de estirarse a todo el ancho */
+.menu.lista .tarjeta{min-height:0;gap:10px}
+.menu.una{max-width:420px;margin-left:auto;margin-right:auto}
+.menu.dos{max-width:860px;margin-left:auto;margin-right:auto}
+.menu .entrar .arr{transition:transform .25s var(--spring)}
+.menu .tarjeta:hover .entrar .arr{transform:translateX(6px)}
+@media(prefers-reduced-motion:reduce){.menu .entrar .arr{transition:none}}
+
+/* ── añadido: botón de vuelta ──────────────────────────────── */
 .volver{margin-top:clamp(22px,4vh,38px);display:inline-flex;align-items:center;gap:10px;
   padding:13px 22px;border-radius:99px;border:1px solid var(--line);
   background:rgba(255,255,255,.05);color:var(--ink);text-decoration:none;
@@ -301,8 +325,27 @@ body:not(:has(.slide:nth-of-type(2))) #navHint{display:none}
     <div class="wrap eje">
       <p class="eyebrow">Nivel 01</p>
       <h1 class="titular">Profundización <em>I</em></h1>
-      <p class="bajada">Aquí van las diapositivas de este nivel: una
-        <span class="mono">section.slide</span> por cada una.</p>
+      <p class="bajada">Elige con qué quieres trabajar.</p>
+      <div class="rejilla menu" style="--min:300px">
+        <a class="tarjeta barra viva" href="presentaciones/index.html">
+          <span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="4" width="18.4" height="12" rx="2.2"/><path d="M12 16v4.2"/><path d="M8.2 20.2h7.6"/><path d="M7.4 12.4 10.6 9l2.4 2.4L16.6 7.6"/></svg></span>
+          <div class="cabeza">
+            <h4>Presentaciones Temáticas</h4>
+            <span class="mono">En preparación</span>
+          </div>
+          <p>Diapositivas para proyectar en clase.</p>
+          <span class="entrar">Entrar <span class="arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tarjeta barra viva" href="actividades/index.html">
+          <span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="2.8" width="9.4" height="9.4" rx="2.2"/><path d="M10.6 10.6 21 14.4l-4.6 1.5 2 4.2-2.3 1-2-4.2-3.3 3.4z"/></svg></span>
+          <div class="cabeza">
+            <h4>Actividades Interactivas</h4>
+            <span class="mono">En preparación</span>
+          </div>
+          <p>Juegos y talleres para hacer en clase.</p>
+          <span class="entrar">Entrar <span class="arr" aria-hidden="true">→</span></span>
+        </a>
+      </div>
       <a class="volver" href="../index.html"><span aria-hidden="true">←</span> Volver al índice</a>
     </div>
   </section>

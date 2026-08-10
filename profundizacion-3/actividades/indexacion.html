@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fondo:#0A0C10;
+    --panel:#101520;
+    --panel-2:#0D111A;
+    --linea:#28344A;
+    --linea-2:#41506D;
+    --tinta:#F2F6FB;
+    --suave:#9BA8BD;
+    --acento:#4CE0C0;
+    --acento-2:#38BDF8;
+    --ok:#4CE0C0;
+    --mal:#FF6B6B;
+    --tibio:#F5B841;
+    --mono:"JetBrains Mono",ui-monospace,"Courier New",monospace;
+    --sans:"Space Grotesk",system-ui,-apple-system,sans-serif;
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--sans);color:var(--tinta);background:var(--fondo);
+    min-height:100vh;-webkit-tap-highlight-color:transparent;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* retícula técnica de fondo: presente, nunca protagonista */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      linear-gradient(to right, rgba(255,255,255,.030) 1px, transparent 1px) 0 0/52px 52px,
+      linear-gradient(to bottom, rgba(255,255,255,.030) 1px, transparent 1px) 0 0/52px 52px;
+    -webkit-mask-image:radial-gradient(ellipse 90% 55% at 50% -5%, #000 35%, transparent 100%);
+            mask-image:radial-gradient(ellipse 90% 55% at 50% -5%, #000 35%, transparent 100%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(ellipse 60% 40% at 50% -10%, rgba(76,224,192,.10), transparent 70%);
+  }
+  .hoja{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:clamp(24px,5vh,56px) 20px 72px}
+
+  /* ---- cabecera ---- */
+  .kicker{
+    font-family:var(--mono);font-size:11.5px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--suave);margin:0 0 12px;display:flex;align-items:center;gap:10px;
+  }
+  .kicker::before{
+    content:"";width:6px;height:6px;border-radius:50%;background:var(--acento);flex:none;
+    box-shadow:0 0 0 3px rgba(76,224,192,.16);
+  }
+  .kicker em{font-style:normal;color:var(--linea-2)}
+  header{
+    display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 28px;
+    padding-bottom:16px;border-bottom:1px solid var(--linea);
+  }
+  h1{
+    font-family:var(--sans);font-weight:600;font-size:clamp(22px,3.6vw,31px);
+    letter-spacing:-.022em;line-height:1.05;margin:0;flex:1 1 260px;
+  }
+  h1 i{font-style:normal;color:var(--suave);font-weight:400}
+  h1 u{text-decoration:none;color:var(--acento)}
+  .marcadores{display:flex;gap:10px;flex:0 0 auto}
+  .dato{
+    display:flex;flex-direction:column;gap:5px;min-width:84px;
+    border:1px solid var(--linea);border-radius:var(--r);background:var(--panel-2);
+    padding:9px 13px;
+  }
+  .dato b{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .dato span{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--suave)}
+  .dato[hidden]{display:none}
+  #aciertos{color:var(--tinta);transition:color .2s ease}
+  #aciertos.pleno,#tiempo.pleno{color:var(--acento)}
+  #d-tiempo.corriendo{border-color:var(--linea-2)}
+  #d-tiempo.corriendo span::after{
+    content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
+    background:var(--acento);margin-left:6px;vertical-align:middle;animation:latido 1.6s ease-in-out infinite;
+  }
+  @keyframes latido{0%,100%{opacity:1}50%{opacity:.18}}
+
+  /* ---- portada: nada del ejercicio se ve hasta pulsar Inicio ---- */
+  .portada{
+    border:1px solid var(--linea);border-left:2px solid var(--acento);
+    border-radius:14px;padding:clamp(26px,5vw,42px);max-width:660px;background:var(--panel-2);
+  }
+  .portada[hidden],.mesa[hidden]{display:none}
+  .portada h2{font-family:var(--sans);font-size:clamp(19px,2.7vw,25px);font-weight:600;letter-spacing:-.022em;line-height:1.25;margin:0 0 12px}
+  .portada p{font-size:14.5px;line-height:1.65;color:var(--suave);margin:0 0 10px;max-width:54ch}
+  .portada .portada-k{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--acento);margin:0 0 14px;
+  }
+  .portada .reglas{margin:0 0 26px;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+  .portada .reglas li{
+    font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--suave);
+    display:flex;gap:10px;align-items:baseline;
+  }
+  .portada .reglas li::before{content:"—";color:var(--acento);flex:none}
+  #btn-inicio{padding:15px 36px;font-size:12px;letter-spacing:.18em}
+
+  /* ---- barra de avance ---- */
+  .barra{height:2px;background:var(--linea);border-radius:2px;overflow:hidden;margin:0 0 clamp(22px,4vh,32px)}
+  .barra i{
+    display:block;height:100%;width:0;border-radius:2px;
+    background:linear-gradient(90deg,var(--acento-2),var(--acento));
+    transition:width .28s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ---- mesa ---- */
+  .mesa{display:grid;grid-template-columns:1fr;gap:32px}
+  @media(min-width:860px){.mesa{grid-template-columns:1fr 1.12fr;gap:40px;align-items:start}}
+
+  /* rótulo de bloque: es el encabezado que dice de qué ruta es cada grupo de
+     ranuras, así que se lee antes que nada — caja propia, no una línea gris */
+  .rotulo{
+    font-family:var(--mono);font-size:12.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--tinta);background:#161E2C;border:1px solid var(--linea-2);
+    border-left:3px solid var(--acento);border-radius:8px;
+    padding:11px 14px;margin:0 0 12px;
+    display:flex;justify-content:space-between;align-items:center;gap:14px;
+  }
+  .rotulo>span:first-child{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+  .rotulo b{color:var(--acento);font-size:13px;font-weight:700;letter-spacing:.06em;flex:none}
+  .rotulo b em{font-style:normal;color:var(--suave);font-weight:400}
+  .rotulo .nota{
+    font-weight:400;font-size:11px;letter-spacing:.04em;color:var(--suave);text-transform:none;
+  }
+  .pista{
+    font-family:var(--mono);font-size:12px;line-height:1.65;color:var(--suave);
+    margin:14px 0 0;letter-spacing:.01em;
+  }
+  .pista kbd{
+    font-family:var(--mono);font-size:11px;border:1px solid var(--linea-2);border-radius:4px;
+    padding:1px 5px;color:var(--tinta);background:var(--panel);
+  }
+
+  /* ---- banco ---- */
+  #banco{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;min-height:72px}
+  .ficha{
+    position:relative;font-family:var(--sans);font-size:15.5px;font-weight:600;line-height:1.28;
+    letter-spacing:-.005em;background:var(--panel);border:1px solid var(--linea-2);border-radius:8px;
+    padding:12px 15px;cursor:grab;touch-action:none;user-select:none;
+    transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease;
+  }
+  .ficha:hover{border-color:var(--acento);transform:translateY(-1px)}
+  .ficha:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+  .ficha.elegida{
+    box-shadow:0 0 0 1px rgba(76,224,192,.35),0 8px 24px -12px rgba(76,224,192,.6);
+  }
+  .ficha.arrastrando{opacity:.18}
+  .fantasma{
+    position:fixed;z-index:99;pointer-events:none;opacity:.97;transform:rotate(-1deg);
+    box-shadow:0 18px 40px -14px rgba(0,0,0,.8);
+  }
+  .ficha .def,.ficha .claves{display:none}
+
+  /* el relleno de la ficha elegida solo se pinta en el banco, nunca dentro de una ranura */
+  .ficha .rot{display:inline-block;color:var(--tinta)}
+  #banco .ficha{background:#1A2331;border-color:var(--linea-2)}
+  #banco .ficha:hover{background:#222D40;border-color:var(--acento)}
+  #banco .ficha.elegida,.ficha.fantasma{
+    background:rgba(76,224,192,.12);border-color:var(--acento);
+  }
+
+  /* ---- esquema: un bloque por grupo, una sola lógica ---- */
+  .esquema{display:flex;flex-direction:column;gap:clamp(22px,3.6vh,30px)}
+  .filas{display:flex;flex-direction:column;gap:7px}
+  /* la ranura vacía es el sitio donde hay que soltar: tiene que verse sola,
+     sin hacer falta arrastrar nada encima. Superficie sólida + filo punteado. */
+  .ranura{
+    display:flex;align-items:stretch;min-height:58px;border-radius:8px;
+    border:1px solid var(--linea-2);border-left:3px solid var(--linea-2);background:var(--panel-2);
+    transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;
+  }
+  .ranura:not(.libre){background:#1A2331;border-color:var(--linea-2)}
+  .ranura.libre{background:#121924;border-style:dashed;border-left-style:solid}
+  .ranura.disponible{border-color:var(--acento);border-left-color:var(--acento);background:#151F2A}
+  .ranura.activa{
+    border-style:solid;border-color:var(--acento);border-left-color:var(--acento);
+    background:rgba(76,224,192,.10);box-shadow:0 0 0 2px rgba(76,224,192,.35) inset;
+  }
+  .ranura .num{
+    font-family:var(--mono);font-size:13px;font-weight:700;color:var(--tinta);letter-spacing:.04em;
+    width:48px;flex:none;display:grid;place-items:center;border-right:1px solid var(--linea-2);
+    background:rgba(255,255,255,.045);
+  }
+  .ranura.libre .num{border-right-style:dashed;color:var(--suave)}
+  .ranura:not(.libre) .num{color:var(--acento);background:rgba(76,224,192,.09)}
+  .ranura .zona{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding-right:13px}
+  .ranura .ficha{
+    flex:1;min-width:0;border:0;background:transparent;border-radius:0;
+    padding:13px 14px;cursor:pointer;box-shadow:none;
+  }
+  .ranura .ficha:hover{background:rgba(255,255,255,.05);transform:none}
+  .ranura.bien{border-left-color:var(--ok)}
+  .ranura.fuera{border-left-color:var(--tibio)}
+  .ranura.mal{border-left-color:var(--mal)}
+  .marca{font-family:var(--mono);font-size:16px;font-weight:700;flex:none;width:18px;text-align:center}
+  .marca.bien{color:var(--ok)}
+  .marca.fuera{color:var(--tibio)}
+  .marca.mal{color:var(--mal)}
+  @keyframes tiembla{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+  .ranura.tiembla{animation:tiembla .2s ease 2}
+
+  /* ---- controles ---- */
+  .controles{display:flex;gap:8px;margin-top:18px}
+  button{
+    font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    padding:13px 24px;border-radius:8px;cursor:pointer;border:1px solid var(--acento);
+    background:var(--acento);color:#06231D;
+    transition:opacity .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
+  }
+  button:not(:disabled):hover{box-shadow:0 8px 24px -12px rgba(76,224,192,.9)}
+  button.secundario{background:#161E2C;color:var(--tinta);border-color:var(--linea-2)}
+  button.secundario:hover{border-color:var(--linea-2);color:var(--tinta);box-shadow:none}
+  button:disabled{opacity:.24;cursor:default}
+  button:focus-visible{outline:2px solid var(--acento-2);outline-offset:2px}
+
+  /* ---- lectura de estado ---- */
+  .leyenda{
+    display:flex;flex-wrap:wrap;gap:7px 20px;margin:16px 0 0;padding:0;list-style:none;
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--suave);
+  }
+  .leyenda[hidden],.estado[hidden]{display:none}
+  .leyenda li{display:flex;align-items:baseline;gap:7px}
+  .leyenda i{font-style:normal;font-weight:700;font-size:14px}
+  .leyenda .bien i{color:var(--ok)}
+  .leyenda .fuera i{color:var(--tibio)}
+  .leyenda .mal i{color:var(--mal)}
+  .estado{
+    margin:16px 0 0;padding:13px 15px;border:1px solid rgba(76,224,192,.45);border-radius:8px;
+    background:rgba(76,224,192,.10);
+    font-family:var(--mono);font-size:12px;line-height:1.65;letter-spacing:.03em;color:var(--acento);
+  }
+  .estado b{display:block;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:5px}
+  .estado span{color:#C4D0E0}
+
+  /* ---- resuelto: cada elemento revela su propia información ---- */
+  .resuelto .ficha{cursor:default}
+  .resuelto .ficha:hover{transform:none;border-color:var(--linea-2)}
+  .resuelto #banco{gap:7px}
+  /* el filo rojo del distractor debe ir DESPUÉS de border-color, o este lo anula */
+  .resuelto #banco .ficha{
+    flex:1 1 100%;background:#161E2C;
+    border-color:var(--linea-2);border-left:3px solid var(--mal);
+  }
+  .resuelto .ranura{background:#1A2331;border-color:var(--linea-2);border-left-color:var(--ok)}
+  .resuelto .ranura .zona{align-items:flex-start}
+  .resuelto .ficha .def{
+    display:block;font-family:var(--sans);font-size:13.5px;line-height:1.6;color:#C4D0E0;
+    font-weight:400;margin-top:7px;max-width:56ch;
+  }
+  .resuelto .ranura .ficha .claves{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .resuelto .claves span{
+    font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--acento);border:1px solid rgba(76,224,192,.35);background:rgba(76,224,192,.08);
+    border-radius:999px;padding:4px 10px;
+  }
+  .resuelto .ranura .ficha{padding:13px 14px 15px}
+  .resuelto .marca{margin-top:14px}
+
+  .pie{
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--linea-2);
+    margin:clamp(34px,6vh,52px) 0 0;padding-top:14px;border-top:1px solid var(--linea);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="hoja">
+
+  <p class="kicker" id="kicker"></p>
+
+  <header>
+    <h1 id="titulo"></h1>
+    <div class="marcadores">
+      <span class="dato" id="d-tiempo"><b id="tiempo">00:00</b><span>tiempo</span></span>
+      <span class="dato" id="d-aciertos" hidden><b id="aciertos">0</b><span id="et-aciertos"></span></span>
+      <span class="dato"><b id="intentos">0</b><span>intentos</span></span>
+    </div>
+  </header>
+  <div class="barra"><i id="avance"></i></div>
+
+  <section class="portada" id="portada">
+    <p class="portada-k">Ejercicio listo</p>
+    <h2 id="portada-h2"></h2>
+    <ul class="reglas" id="reglas"></ul>
+    <button id="btn-inicio">Inicio</button>
+  </section>
+
+  <div class="mesa" id="mesa" hidden>
+    <section>
+      <p class="rotulo">Banco de términos <b id="conteo-banco">0</b></p>
+      <div id="banco"></div>
+      <p class="pista" id="pista"></p>
+    </section>
+
+    <section>
+      <div class="esquema" id="esquema"></div>
+
+      <div class="controles">
+        <button id="btn-revisar" disabled>Revisar</button>
+        <button id="btn-reiniciar" class="secundario">Nueva ronda</button>
+      </div>
+      <ul class="leyenda" id="leyenda" hidden>
+        <li class="bien"><i>✓</i><span id="ley-bien"></span></li>
+        <li class="fuera"><i>●</i><span id="ley-fuera"></span></li>
+        <li class="mal"><i>✗</i><span id="ley-mal"></span></li>
+      </ul>
+      <p class="estado" id="estado" hidden aria-live="polite"></p>
+    </section>
+  </div>
+
+  <p class="pie"><span id="pie-izq"></span><span id="pie-ronda">Ronda 01</span></p>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1 · TEXTOS
+   Todo lo que se lee en pantalla. Los comentarios muestran el valor del
+   taller «Ordena el método» para que rellenar sea sustituir, no inventar.
+   ══════════════════════════════════════════════════════════════════════ */
+const TEXTOS = {
+  pagina:   "Las dos rutas de la indexación — Dinámica",
+  kicker:   ["Dinámica", "Indexación y métricas de revistas"],
+  h1:       "Las dos {rutas} de la indexación",
+  h1sub:    "· y la que Colombia construyó encima",
+
+  portadaH2:"Dieciséis términos. Once arman tres jerarquías —Clarivate, Elsevier y Colombia— y cinco no pertenecen a ninguna.",
+  reglas:   ["El cronómetro arranca al pulsar Inicio y no se detiene con una revisión fallida.",
+             "Cada ruta baja de la entidad a la base de datos y de ahí a la métrica: el orden importa en tres de los cuatro bloques.",
+             "Los cinco términos restantes suenan al tema pero no entran; al terminar verás por qué."],
+
+  pista:    ["Arrastra un término hasta su ranura, o selecciónalo con <kbd>Enter</kbd> y toca la ranura.",
+             "Pregúntate siempre: ¿esto es una empresa, una base de datos, un lugar donde se lee el artículo o una métrica?"],
+
+  etAciertos:"de 11 ok",
+
+  leyenda:  {bien:"en su lugar", fuera:"pertenece, otro nivel", mal:"no pertenece al esquema"},
+
+  intruso:  ["término que no pertenece a ninguna ruta.", "términos que no pertenecen a ninguna ruta."],
+  soloOrden:"Todos pertenecen al esquema: falta corregir el bloque o el nivel.",
+
+  resueltoTitulo:"Jerarquías validadas",
+  resueltoCuerpo:"Once términos en su nivel",
+  resueltoCola:"Abajo queda la definición de cada nivel; a la izquierda, por qué los demás no pertenecen.",
+
+  pie:      "Unillanos · Profundización III"
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   2 · BLOQUES — el esquema que hay que armar
+   Un objeto por grupo. `orden:true` exige la secuencia (ranuras 01, 02…);
+   `orden:false` solo exige pertenecer al grupo (ranuras A, B…).
+   Un solo bloque ordenado = juego de secuencia. Varios bloques = clasificación.
+   Cada ítem:  t = término   d = definición (se revela al resolver)
+               k = 3 verbos-clave en minúscula (píldoras del revelado)
+   ══════════════════════════════════════════════════════════════════════ */
+const BLOQUES = [
+  {id:"cla", rotulo:"Ruta 1 · Clarivate", nota:"de la empresa a la métrica", orden:true, items:[
+    {t:"Clarivate", d:"Empresa privada que no publica ni una sola revista: vende el acceso a la base de datos y a los informes con que el mundo ordena el prestigio de las revistas.",
+     k:["empresa","vende acceso","no publica"]},
+    {t:"Web of Science", d:"La base de datos de citas de Clarivate. Selecciona qué revistas entran y registra quién cita a quién; devuelve referencias, no el artículo completo.",
+     k:["indexa","citas","selectiva"]},
+    {t:"Journal Citation Reports", d:"Informe anual que, con los datos de Web of Science, calcula el Factor de Impacto de cada revista y la ubica en un cuartil Q1 a Q4 dentro de su área.",
+     k:["factor de impacto","cuartil","anual"]},
+  ]},
+
+  {id:"els", rotulo:"Ruta 2 · Elsevier", nota:"mismos tres niveles, otros nombres", orden:true, items:[
+    {t:"Elsevier", d:"Editorial neerlandesa que sí publica miles de revistas y además es dueña de la base de datos que las mide: su nombre aparece arriba de la cadena, no dentro de ella.",
+     k:["editorial","publica","dueña"]},
+    {t:"Scopus", d:"La base de datos de citas de Elsevier, más amplia que Web of Science y más usada en América Latina. Indexa y cuenta citas; tampoco entrega el texto completo.",
+     k:["indexa","citas","amplia"]},
+    {t:"SJR (SCImago Journal Rank)", d:"El indicador que ordena las revistas de Scopus en cuartiles Q1 a Q4. No lo calcula Elsevier sino el grupo SCImago, y pesa más una cita venida de una revista prestigiosa.",
+     k:["indicador","pondera","cuartil"]},
+  ]},
+
+  {id:"txt", rotulo:"Nivel aparte · Texto completo", nota:"dónde está el PDF, no dónde se mide", orden:false, items:[
+    {t:"ScienceDirect", d:"La plataforma donde Elsevier entrega el artículo completo. Cuelga de Elsevier, no de Scopus: es la librería, no el catálogo que selecciona ni el ranking que puntúa.",
+     k:["texto completo","descarga","no mide"]},
+    {t:"SpringerLink", d:"El equivalente de Springer Nature: cada gran editorial tiene su propio repositorio de textos completos, y ninguno de ellos reparte cuartiles ni indexa a la competencia.",
+     k:["repositorio","editorial","sin cuartiles"]},
+  ]},
+
+  {id:"col", rotulo:"Ruta 3 · Colombia", nota:"se monta sobre las dos anteriores", orden:true, items:[
+    {t:"Minciencias", d:"El Ministerio de Ciencia, Tecnología e Innovación: la entidad estatal que financia y evalúa la ciencia en Colombia y fija las reglas con que se clasifican las revistas.",
+     k:["entidad","estatal","fija reglas"]},
+    {t:"Publindex", d:"El sistema con que Minciencias clasifica por convocatorias las revistas científicas colombianas. No es una base de datos: allí no se buscan artículos, se consulta la categoría.",
+     k:["clasifica","convocatoria","nacional"]},
+    {t:"Categoría A1", d:"El escalón más alto de Publindex, por encima de A2, B y C. Se asigna según el cuartil que la revista ya tenga en JCR o en SJR: por eso Colombia depende de las dos rutas anteriores.",
+     k:["escalón","a2 b c","depende"]},
+  ]},
+];
+
+/* ══════════════════════════════════════════════════════════════════════
+   3 · DISTRACTORES — términos que suenan al tema pero no pertenecen
+   Su `d` explica POR QUÉ no entra. Ese es el contenido que el juego enseña.
+   El pool conviene que sea grande (12–18): en cada ronda se sortean POR_RONDA.
+   ══════════════════════════════════════════════════════════════════════ */
+const DISTRACTORES = [
+  {t:"Colciencias", d:"Es el nombre anterior de Minciencias, no un organismo aparte: la entidad cambió de nombre en 2019 y sigue operando Publindex."},
+  {t:"Google Scholar", d:"Rastrea todo lo que encuentra en la web sin comité que seleccione revistas: por eso no otorga cuartiles ni sirve como aval de indexación."},
+  {t:"Cuartil Q5", d:"No existe. Un cuartil parte la lista en cuatro, así que después de Q4 no hay nada."},
+  {t:"Categoría D", d:"Publindex llega hasta C. Una revista sin categoría simplemente no quedó clasificada en la convocatoria."},
+  {t:"Mendeley", d:"Gestor de referencias, también propiedad de Elsevier: ordena tu bibliografía, no clasifica revistas."},
+  {t:"ORCID", d:"Identifica de forma única al autor, no a la revista. Nada de lo que hace mide impacto."},
+  {t:"DOI", d:"Es la matrícula permanente de un artículo para poder citarlo y encontrarlo; no dice nada de la calidad de la revista."},
+  {t:"Índice h", d:"Mide la trayectoria acumulada de un investigador. Es un indicador, pero no un nivel de estas jerarquías."},
+  {t:"SciELO", d:"Biblioteca latinoamericana de acceso abierto: entrega el texto completo gratis, pero no calcula factor de impacto ni depende de estas dos empresas."},
+  {t:"Latindex", d:"Sistema regional iberoamericano de información sobre revistas: es otra ruta, no un escalón de las de Clarivate o Elsevier."},
+  {t:"PubMed", d:"Base de datos temática de biomedicina, pública y gratuita. Indexa, pero no produce cuartiles ni pertenece a estas empresas."},
+  {t:"DOAJ", d:"Directorio de revistas de acceso abierto: certifica que una revista es abierta y seria, no que sea de alto impacto."},
+  {t:"ResearchGate", d:"Red social académica donde los propios autores suben sus artículos. No selecciona revistas ni mide nada."},
+];
+
+const POR_RONDA = 5;   /* distractores en pantalla por ronda */
+
+/* ══════════════════════════════════════════════════════════════════════
+   A partir de aquí no hace falta tocar nada.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ---------- estructura derivada de BLOQUES ---------- */
+let desde = 0;
+BLOQUES.forEach(b => { b.desde = desde; b.n = b.items.length; desde += b.n; });
+const TOTAL = desde;
+const bloqueDe = i => BLOQUES.find(b => i >= b.desde && i < b.desde + b.n);
+
+let fichas = [], ranuras = new Array(TOTAL).fill(null), elegida = null;
+let intentos = 0, ronda = 0, resuelto = false;
+
+const banco      = document.getElementById("banco");
+const esquema    = document.getElementById("esquema");
+const leyenda    = document.getElementById("leyenda");
+const estado     = document.getElementById("estado");
+const avance     = document.getElementById("avance");
+const mesa       = document.getElementById("mesa");
+const portada    = document.getElementById("portada");
+const btnRevisar = document.getElementById("btn-revisar");
+
+function mezclar(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* ---------- textos fijos en su sitio ---------- */
+document.title = TEXTOS.pagina;
+document.getElementById("kicker").innerHTML =
+  TEXTOS.kicker[0] + ' <em>/</em> ' + TEXTOS.kicker[1];
+document.getElementById("titulo").innerHTML =
+  TEXTOS.h1.replace(/\{(.+?)\}/g, '<u>$1</u>') + ' <i>' + TEXTOS.h1sub + '</i>';
+document.getElementById("portada-h2").textContent = TEXTOS.portadaH2;
+document.getElementById("reglas").innerHTML =
+  TEXTOS.reglas.map(r => '<li>' + r + '</li>').join("");
+document.getElementById("pista").innerHTML = TEXTOS.pista.join("<br>");
+document.getElementById("et-aciertos").textContent = TEXTOS.etAciertos;
+document.getElementById("ley-bien").textContent  = TEXTOS.leyenda.bien;
+document.getElementById("ley-fuera").textContent = TEXTOS.leyenda.fuera;
+document.getElementById("ley-mal").textContent   = TEXTOS.leyenda.mal;
+document.getElementById("pie-izq").textContent   = TEXTOS.pie;
+
+/* ---------- el esquema se construye una sola vez ---------- */
+const grupos = BLOQUES.map(b => {
+  const caja = document.createElement("div");
+  const rot  = document.createElement("p");
+  rot.className = "rotulo";
+  const izq = document.createElement("span");
+  izq.textContent = b.rotulo;
+  if(b.nota){
+    const n = document.createElement("span");
+    n.className = "nota"; n.textContent = " " + b.nota;
+    izq.appendChild(n);
+  }
+  const cont = document.createElement("b");
+  rot.appendChild(izq); rot.appendChild(cont);
+  const filas = document.createElement("div");
+  filas.className = "filas";
+  caja.appendChild(rot); caja.appendChild(filas);
+  esquema.appendChild(caja);
+  return {filas, cont};
+});
+
+/* ---------- cronómetro: arranca en Inicio, solo para al resolver ---------- */
+let t0 = 0, transcurrido = 0, reloj = null;
+const elTiempo   = document.getElementById("tiempo");
+const cajaTiempo = document.getElementById("d-tiempo");
+
+function formato(ms){
+  const s = Math.floor(ms/1000);
+  return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
+}
+function pintarReloj(){ elTiempo.textContent = formato(transcurrido); }
+function arrancarReloj(){
+  t0 = Date.now(); transcurrido = 0; pintarReloj();
+  clearInterval(reloj);
+  reloj = setInterval(() => { transcurrido = Date.now() - t0; pintarReloj(); }, 200);
+  cajaTiempo.classList.add("corriendo");
+  elTiempo.classList.remove("pleno");
+}
+function pararReloj(){
+  if(reloj){ transcurrido = Date.now() - t0; pintarReloj(); }
+  clearInterval(reloj); reloj = null;
+  cajaTiempo.classList.remove("corriendo");
+}
+
+/* ---------- ronda ---------- */
+function prepararRonda(){
+  pararReloj();
+  transcurrido = 0; pintarReloj();
+  elTiempo.classList.remove("pleno");
+
+  const sorteo = mezclar(DISTRACTORES.slice()).slice(0, POR_RONDA);
+  fichas = mezclar([
+    ...BLOQUES.flatMap(b => b.items.map((e,i) =>
+      ({id:b.id+i, texto:e.t, def:e.d, claves:e.k, grupo:b.id, orden:i}))),
+    ...sorteo.map((e,i) => ({id:"x"+i, texto:e.t, def:e.d, claves:null, grupo:null, orden:null}))
+  ]);
+  ranuras = new Array(TOTAL).fill(null);
+  elegida = null; intentos = 0; resuelto = false;
+  ronda++;
+  document.body.classList.remove("resuelto");
+  document.getElementById("intentos").textContent = "0";
+  document.getElementById("d-aciertos").hidden = true;
+  document.getElementById("aciertos").classList.remove("pleno");
+  document.getElementById("pie-ronda").textContent = "Ronda " + String(ronda).padStart(2,"0");
+  leyenda.hidden = true;
+  estado.hidden = true;
+  dibujar();
+
+  /* las palabras permanecen ocultas hasta pulsar Inicio */
+  mesa.hidden = true;
+  portada.hidden = false;
+  document.querySelector(".portada-k").textContent =
+    ronda > 1 ? "Ronda " + String(ronda).padStart(2,"0") + " lista" : "Ejercicio listo";
+}
+
+function comenzar(){
+  portada.hidden = true;
+  mesa.hidden = false;
+  dibujar();
+  arrancarReloj();
+  const primera = banco.querySelector(".ficha");
+  if(primera) primera.focus();
+}
+
+function crearFicha(f, enRanura){
+  const el = document.createElement("div");
+  el.className = "ficha" + (elegida === f.id ? " elegida" : "");
+  el.dataset.id = f.id;
+  el.tabIndex = resuelto ? -1 : 0;
+  el.setAttribute("role","button");
+  el.setAttribute("aria-label", f.texto +
+    (enRanura ? " — colocada, activa para devolverla al banco" : " — activa para elegirla"));
+  el.innerHTML = '<span class="rot"></span><span class="def"></span><span class="claves"></span>';
+  el.querySelector(".rot").textContent = f.texto;
+  el.querySelector(".def").textContent = f.def;
+  if(f.claves){
+    const c = el.querySelector(".claves");
+    f.claves.forEach(k => { const s = document.createElement("span"); s.textContent = k; c.appendChild(s); });
+  }
+  if(!resuelto){
+    el.addEventListener("pointerdown", e => empezarArrastre(e, f.id, el));
+    el.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); tocarFicha(f.id); }
+    });
+  }
+  return el;
+}
+
+/* bloque sin orden → letras A, B, C · bloque ordenado → 01, 02… desde su inicio */
+function etiqueta(i){
+  const b = bloqueDe(i), k = i - b.desde;
+  return b.orden ? String(k+1).padStart(2,"0") : String.fromCharCode(65 + k);
+}
+
+function crearRanura(i){
+  const r = document.createElement("div");
+  r.className = "ranura" + (ranuras[i] ? "" : " libre") + (!ranuras[i] && elegida ? " disponible" : "");
+  r.dataset.ranura = i;
+
+  const num = document.createElement("div");
+  num.className = "num";
+  num.textContent = etiqueta(i);
+
+  const zona = document.createElement("div");
+  zona.className = "zona";
+  if(ranuras[i]) zona.appendChild(crearFicha(fichas.find(x => x.id === ranuras[i]), true));
+
+  r.appendChild(num); r.appendChild(zona);
+  r.addEventListener("click", () => { if(elegida) colocar(elegida, i); });
+  return r;
+}
+
+function dibujar(){
+  banco.innerHTML = "";
+  const enBanco = fichas.filter(f => !ranuras.includes(f.id));
+  enBanco.forEach(f => banco.appendChild(crearFicha(f, false)));
+  document.getElementById("conteo-banco").textContent = enBanco.length;
+
+  BLOQUES.forEach((b, g) => {
+    grupos[g].filas.innerHTML = "";
+    for(let i = b.desde; i < b.desde + b.n; i++) grupos[g].filas.appendChild(crearRanura(i));
+    const puestas = ranuras.slice(b.desde, b.desde + b.n).filter(Boolean).length;
+    grupos[g].cont.innerHTML = puestas + ' <em>/ ' + b.n + '</em>';
+  });
+
+  const puestas = ranuras.filter(Boolean).length;
+  avance.style.width = (puestas / TOTAL * 100) + "%";
+  btnRevisar.disabled = resuelto || puestas < TOTAL;
+}
+
+function tocarFicha(id){
+  if(resuelto) return;
+  const posicion = ranuras.indexOf(id);
+  if(posicion !== -1){ ranuras[posicion] = null; elegida = null; limpiarMarcas(); dibujar(); return; }
+  elegida = (elegida === id) ? null : id;
+  dibujar();
+}
+
+function colocar(id, i){
+  if(resuelto) return;
+  const previa = ranuras.indexOf(id);
+  if(previa !== -1) ranuras[previa] = null;
+  ranuras[i] = id;          /* si había otra ficha, vuelve sola al banco */
+  elegida = null;
+  limpiarMarcas();
+  dibujar();
+}
+
+function limpiarMarcas(){
+  document.querySelectorAll(".ranura").forEach(r => r.classList.remove("bien","fuera","mal"));
+  estado.hidden = true;
+}
+
+/* ---------- arrastre con pointer events (ratón + táctil) ---------- */
+let arrastre = null;
+
+function empezarArrastre(e, id, el){
+  if(resuelto || e.button === 1 || e.button === 2) return;
+  const rect = el.getBoundingClientRect();
+  arrastre = {
+    id, el, movido:false,
+    dx: e.clientX - rect.left, dy: e.clientY - rect.top,
+    ancho: rect.width, x0: e.clientX, y0: e.clientY, fantasma:null
+  };
+  el.setPointerCapture(e.pointerId);
+  el.addEventListener("pointermove", moverArrastre);
+  el.addEventListener("pointerup", terminarArrastre);
+  el.addEventListener("pointercancel", terminarArrastre);
+}
+
+function moverArrastre(e){
+  if(!arrastre) return;
+  const dist = Math.hypot(e.clientX - arrastre.x0, e.clientY - arrastre.y0);
+  if(!arrastre.movido && dist < 6) return;
+  if(!arrastre.movido){
+    arrastre.movido = true;
+    const g = arrastre.el.cloneNode(true);
+    g.classList.add("fantasma");
+    g.classList.remove("elegida");
+    g.style.width = arrastre.ancho + "px";
+    document.body.appendChild(g);
+    arrastre.fantasma = g;
+    arrastre.el.classList.add("arrastrando");
+  }
+  arrastre.fantasma.style.left = (e.clientX - arrastre.dx) + "px";
+  arrastre.fantasma.style.top  = (e.clientY - arrastre.dy) + "px";
+  const r = ranuraBajo(e.clientX, e.clientY);
+  document.querySelectorAll(".ranura").forEach(x => x.classList.toggle("activa", x === r));
+}
+
+function ranuraBajo(x, y){
+  if(arrastre && arrastre.fantasma) arrastre.fantasma.style.display = "none";
+  const el = document.elementFromPoint(x, y);
+  if(arrastre && arrastre.fantasma) arrastre.fantasma.style.display = "";
+  return el ? el.closest(".ranura") : null;
+}
+
+function terminarArrastre(e){
+  if(!arrastre) return;
+  const {id, el, movido, fantasma} = arrastre;
+  el.removeEventListener("pointermove", moverArrastre);
+  el.removeEventListener("pointerup", terminarArrastre);
+  el.removeEventListener("pointercancel", terminarArrastre);
+  const r = movido ? ranuraBajo(e.clientX, e.clientY) : null;
+  if(fantasma) fantasma.remove();
+  el.classList.remove("arrastrando");
+  document.querySelectorAll(".ranura").forEach(x => x.classList.remove("activa"));
+  arrastre = null;
+  if(!movido){ tocarFicha(id); return; }
+  if(r) colocar(id, +r.dataset.ranura);
+  else if(ranuras.includes(id)){ ranuras[ranuras.indexOf(id)] = null; limpiarMarcas(); dibujar(); }
+  else dibujar();
+}
+
+/* ---------- revisión ----------
+   bloque sin orden: acierta si la ficha pertenece al bloque, en cualquiera de sus ranuras
+   bloque ordenado:  acierta solo si además coincide la posición                       */
+function evaluar(f, i){
+  const b = bloqueDe(i);
+  if(f.grupo === b.id) return (!b.orden || f.orden === i - b.desde) ? "bien" : "fuera";
+  return f.grupo ? "fuera" : "mal";
+}
+
+btnRevisar.addEventListener("click", () => {
+  if(resuelto || ranuras.some(x => x === null)) return;
+
+  intentos++;
+  document.getElementById("intentos").textContent = intentos;
+
+  let correctas = 0, intrusas = 0;
+  const cajas = document.querySelectorAll(".ranura");
+  ranuras.forEach((id, i) => {
+    const f = fichas.find(x => x.id === id);
+    const tipo = evaluar(f, i);
+    if(tipo === "bien") correctas++;
+    if(tipo === "mal")  intrusas++;
+
+    cajas[i].classList.add(tipo);
+    const marca = document.createElement("span");
+    marca.className = "marca " + tipo;
+    marca.textContent = tipo === "bien" ? "✓" : (tipo === "mal" ? "✗" : "●");
+    cajas[i].querySelector(".zona").appendChild(marca);
+
+    if(tipo !== "bien"){
+      cajas[i].classList.add("tiembla");
+      setTimeout(() => cajas[i].classList.remove("tiembla"), 480);
+    }
+  });
+
+  const dAciertos = document.getElementById("d-aciertos");
+  const nAciertos = document.getElementById("aciertos");
+  dAciertos.hidden = false;
+  nAciertos.textContent = correctas;
+  nAciertos.classList.toggle("pleno", correctas === TOTAL);
+  leyenda.hidden = correctas === TOTAL;
+
+  if(correctas === TOTAL) revelar();
+  else pista(correctas, intrusas);
+});
+
+function pista(correctas, intrusas){
+  estado.hidden = false;
+  const linea = intrusas
+    ? "Hay " + intrusas + " " + TEXTOS.intruso[intrusas === 1 ? 0 : 1]
+    : TEXTOS.soloOrden;
+  estado.innerHTML = '<b>Revisión ' + String(intentos).padStart(2,"0") + '</b>' +
+                     '<span>' + correctas + ' de ' + TOTAL + ' en su lugar. ' + linea +
+                     ' El cronómetro sigue corriendo.</span>';
+}
+
+/* al resolver, cada elemento muestra su propia información */
+function revelar(){
+  resuelto = true;
+  btnRevisar.disabled = true;
+  pararReloj();
+  elTiempo.classList.add("pleno");
+  document.body.classList.add("resuelto");
+  const marcas = Array.prototype.map.call(document.querySelectorAll(".ranura .marca"), m => m.outerHTML);
+  dibujar();
+  document.querySelectorAll(".ranura").forEach((r, i) => {
+    r.classList.add("bien");
+    r.querySelector(".zona").insertAdjacentHTML("beforeend", marcas[i]);
+  });
+  estado.hidden = false;
+  estado.innerHTML = '<b>' + TEXTOS.resueltoTitulo + ' · ' + formato(transcurrido) + '</b>' +
+                     '<span>' + TEXTOS.resueltoCuerpo + ' tras ' + intentos +
+                     (intentos === 1 ? ' intento' : ' intentos') +
+                     '. Cronómetro detenido. ' + TEXTOS.resueltoCola + '</span>';
+}
+
+document.getElementById("btn-inicio").addEventListener("click", comenzar);
+document.getElementById("btn-reiniciar").addEventListener("click", prepararRonda);
+prepararRonda();
+</script>
+</body>
+</html>

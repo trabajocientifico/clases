@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Profundización III</title>
-<meta name="description" content="Profundización III: presentaciones temáticas y actividades interactivas.">
+<title>Actividades Interactivas · Profundización II</title>
+<meta name="description" content="Actividades Interactivas de la Profundización II.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -311,6 +311,14 @@ body:not(:has(.slide:nth-of-type(2))) #navHint{display:none}
   border-color:var(--c,var(--accent));transform:translateY(-3px)}
 .volver:focus-visible{outline:2px solid var(--c,var(--accent));outline-offset:4px}
 @media(prefers-reduced-motion:reduce){.volver:hover{transform:none}}
+
+/* ── añadido: carpeta todavía vacía ────────────────────────── */
+.vacio{width:100%;margin-top:clamp(16px,3vh,28px);border:1px dashed var(--line);
+  border-radius:20px;padding:clamp(26px,4.5vw,46px);text-align:center;
+  background:rgba(255,255,255,.02);color:var(--muted);font-size:14.5px;line-height:1.6}
+.vacio b{display:block;font-family:var(--serif);font-weight:700;font-size:clamp(18px,2vw,23px);
+  color:var(--ink2);margin-bottom:9px}
+.vacio .mono{display:block;margin-top:12px}
 </style>
 </head>
 <body>
@@ -321,32 +329,18 @@ body:not(:has(.slide:nth-of-type(2))) #navHint{display:none}
 
 <div id="stage">
 
-  <section class="slide active c3">
+  <section class="slide active c2">
     <div class="wrap eje">
-      <p class="eyebrow">Nivel 03</p>
-      <h1 class="titular">Profundización <em>III</em></h1>
-      <p class="bajada">Elige con qué quieres trabajar.</p>
-      <div class="rejilla menu" style="--min:300px">
-        <a class="tarjeta barra viva" href="presentaciones/index.html">
-          <span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="4" width="18.4" height="12" rx="2.2"/><path d="M12 16v4.2"/><path d="M8.2 20.2h7.6"/><path d="M7.4 12.4 10.6 9l2.4 2.4L16.6 7.6"/></svg></span>
-          <div class="cabeza">
-            <h4>Presentaciones Temáticas</h4>
-            <span class="mono">En preparación</span>
-          </div>
-          <p>Diapositivas para proyectar en clase.</p>
-          <span class="entrar">Entrar <span class="arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tarjeta barra viva" href="actividades/index.html">
-          <span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="2.8" width="9.4" height="9.4" rx="2.2"/><path d="M10.6 10.6 21 14.4l-4.6 1.5 2 4.2-2.3 1-2-4.2-3.3 3.4z"/></svg></span>
-          <div class="cabeza">
-            <h4>Actividades Interactivas</h4>
-            <span class="mono">1 actividad</span>
-          </div>
-          <p>Juegos y talleres para hacer en clase.</p>
-          <span class="entrar">Entrar <span class="arr" aria-hidden="true">→</span></span>
-        </a>
+      <p class="eyebrow">Profundización II · Nivel 02</p>
+      <h1 class="titular">Actividades <em>interactivas</em></h1>
+      <p class="bajada">Juegos y talleres para hacer en clase.</p>
+      <div class="vacio">
+        <b>Todavía no hay nada aquí</b>
+        Esta carpeta está lista para recibir archivos. Cuando añadas uno,
+        cuélgalo de esta misma página como una tarjeta más.
+        <span class="mono">profundizacion-2/actividades/</span>
       </div>
-      <a class="volver" href="../index.html"><span aria-hidden="true">←</span> Volver al índice</a>
+      <a class="volver" href="../index.html"><span aria-hidden="true">←</span> Volver a Profundización II</a>
     </div>
   </section>
 </div>

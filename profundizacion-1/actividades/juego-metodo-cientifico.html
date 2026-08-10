@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordena el método — Taller 01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fondo:#0A0C10;
+    --panel:#101520;
+    --panel-2:#0D111A;
+    --linea:#1C2434;
+    --linea-2:#2B364B;
+    --tinta:#E7ECF3;
+    --suave:#78859B;
+    --acento:#4CE0C0;
+    --acento-2:#38BDF8;
+    --ok:#4CE0C0;
+    --mal:#FF6B6B;
+    --tibio:#F5B841;
+    --mono:"JetBrains Mono",ui-monospace,"Courier New",monospace;
+    --sans:"Space Grotesk",system-ui,-apple-system,sans-serif;
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--sans);color:var(--tinta);background:var(--fondo);
+    min-height:100vh;-webkit-tap-highlight-color:transparent;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* retícula técnica de fondo: presente, nunca protagonista */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      linear-gradient(to right, rgba(255,255,255,.030) 1px, transparent 1px) 0 0/52px 52px,
+      linear-gradient(to bottom, rgba(255,255,255,.030) 1px, transparent 1px) 0 0/52px 52px;
+    -webkit-mask-image:radial-gradient(ellipse 90% 55% at 50% -5%, #000 35%, transparent 100%);
+            mask-image:radial-gradient(ellipse 90% 55% at 50% -5%, #000 35%, transparent 100%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(ellipse 60% 40% at 50% -10%, rgba(76,224,192,.10), transparent 70%);
+  }
+  .hoja{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:clamp(24px,5vh,56px) 20px 72px}
+
+  /* ---- cabecera: identificación, estado y marcadores ---- */
+  .kicker{
+    font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--suave);margin:0 0 12px;display:flex;align-items:center;gap:10px;
+  }
+  .kicker::before{
+    content:"";width:6px;height:6px;border-radius:50%;background:var(--acento);flex:none;
+    box-shadow:0 0 0 3px rgba(76,224,192,.16);
+  }
+  .kicker em{font-style:normal;color:var(--linea-2)}
+  header{
+    display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 28px;
+    padding-bottom:16px;border-bottom:1px solid var(--linea);
+  }
+  h1{
+    font-family:var(--sans);font-weight:600;font-size:clamp(22px,3.6vw,31px);
+    letter-spacing:-.022em;line-height:1.05;margin:0;flex:1 1 260px;
+  }
+  h1 i{font-style:normal;color:var(--suave);font-weight:400}
+  h1 u{text-decoration:none;color:var(--acento)}
+  .marcadores{display:flex;gap:10px;flex:0 0 auto}
+  .dato{
+    display:flex;flex-direction:column;gap:5px;min-width:84px;
+    border:1px solid var(--linea);border-radius:var(--r);background:var(--panel-2);
+    padding:9px 13px;
+  }
+  .dato b{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .dato span{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--suave)}
+  .dato[hidden]{display:none}
+  #aciertos{color:var(--tinta);transition:color .2s ease}
+  #aciertos.pleno,#tiempo.pleno{color:var(--acento)}
+  #d-tiempo.corriendo{border-color:var(--linea-2)}
+  #d-tiempo.corriendo span::after{
+    content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
+    background:var(--acento);margin-left:6px;vertical-align:middle;animation:latido 1.6s ease-in-out infinite;
+  }
+  @keyframes latido{0%,100%{opacity:1}50%{opacity:.18}}
+
+  /* ---- portada: el ejercicio no muestra nada hasta que se pulsa Inicio ---- */
+  .portada{
+    border:1px solid var(--linea);border-left:2px solid var(--acento);
+    border-radius:14px;padding:clamp(26px,5vw,42px);max-width:640px;background:var(--panel-2);
+  }
+  .portada[hidden],.mesa[hidden]{display:none}
+  .portada h2{font-family:var(--sans);font-size:clamp(19px,2.7vw,25px);font-weight:600;letter-spacing:-.022em;line-height:1.25;margin:0 0 12px}
+  .portada p{font-size:14.5px;line-height:1.65;color:var(--suave);margin:0 0 10px;max-width:54ch}
+  .portada .portada-k{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--acento);margin:0 0 14px;
+  }
+  .portada .reglas{margin:0 0 26px;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+  .portada .reglas li{
+    font-family:var(--mono);font-size:11.5px;line-height:1.55;color:var(--suave);
+    display:flex;gap:10px;align-items:baseline;
+  }
+  .portada .reglas li::before{content:"—";color:var(--linea-2);flex:none}
+  #btn-inicio{padding:15px 36px;font-size:12px;letter-spacing:.18em}
+
+  /* ---- barra de avance: una sola línea, sin ornamento ---- */
+  .barra{height:2px;background:var(--linea);border-radius:2px;overflow:hidden;margin:0 0 clamp(22px,4vh,32px)}
+  .barra i{
+    display:block;height:100%;width:0;border-radius:2px;
+    background:linear-gradient(90deg,var(--acento-2),var(--acento));
+    transition:width .28s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ---- mesa ---- */
+  .mesa{display:grid;grid-template-columns:1fr;gap:32px}
+  @media(min-width:860px){.mesa{grid-template-columns:1fr 1.08fr;gap:40px;align-items:start}}
+
+  .rotulo{
+    font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--suave);border-bottom:1px solid var(--linea);padding-bottom:9px;margin:0 0 16px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  }
+  .rotulo b{color:var(--tinta);font-weight:700;letter-spacing:.06em}
+  .rotulo b em{font-style:normal;color:var(--suave);font-weight:400}
+  .pista{
+    font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--suave);
+    margin:14px 0 0;letter-spacing:.01em;
+  }
+  .pista kbd{
+    font-family:var(--mono);font-size:10px;border:1px solid var(--linea-2);border-radius:4px;
+    padding:1px 5px;color:var(--tinta);background:var(--panel);
+  }
+
+  /* ---- banco ---- */
+  #banco{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;min-height:72px}
+  .ficha{
+    position:relative;font-family:var(--sans);font-size:14.5px;font-weight:500;line-height:1.25;
+    letter-spacing:-.005em;background:var(--panel);border:1px solid var(--linea);border-radius:8px;
+    padding:11px 14px;cursor:grab;touch-action:none;user-select:none;
+    transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease;
+  }
+  .ficha:hover{border-color:var(--linea-2);transform:translateY(-1px)}
+  .ficha:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+  .ficha.elegida{
+    background:rgba(76,224,192,.10);border-color:var(--acento);color:var(--tinta);
+    box-shadow:0 0 0 1px rgba(76,224,192,.35),0 8px 24px -12px rgba(76,224,192,.6);
+  }
+  .ficha.arrastrando{opacity:.18}
+  .fantasma{
+    position:fixed;z-index:99;pointer-events:none;opacity:.97;transform:rotate(-1deg);
+    border-color:var(--acento);box-shadow:0 18px 40px -14px rgba(0,0,0,.8);
+  }
+  .ficha .def,.ficha .claves{display:none}
+
+  /* ---- máscara plana del recuadro: relleno sólido y filo de un solo color ---- */
+  .ficha .rot{display:inline-block;color:var(--tinta)}
+  #banco .ficha{background:var(--panel);border-color:var(--linea)}
+  #banco .ficha:hover{background:#141A27;border-color:var(--linea-2)}
+  #banco .ficha.elegida,.ficha.fantasma{
+    background:rgba(76,224,192,.12);border-color:var(--acento);
+  }
+
+  /* ---- secuencia: la ranura ES la ficha, sin cajas anidadas ---- */
+  #secuencia{display:flex;flex-direction:column;gap:7px}
+  .ranura{
+    display:flex;align-items:stretch;min-height:52px;border-radius:8px;
+    border:1px solid var(--linea);border-left:2px solid var(--linea);background:var(--panel-2);
+    transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;
+  }
+  .ranura:not(.libre){background:var(--panel);border-color:var(--linea)}
+  .ranura.libre{background:transparent;border-style:dashed;border-left-style:solid}
+  .ranura.disponible{border-color:var(--linea-2);border-left-color:var(--acento)}
+  .ranura.activa{
+    border-style:solid;border-color:var(--acento);border-left-color:var(--acento);
+    background:rgba(76,224,192,.06);box-shadow:0 0 0 1px rgba(76,224,192,.25) inset;
+  }
+  .ranura .num{
+    font-family:var(--mono);font-size:11px;font-weight:700;color:var(--suave);letter-spacing:.04em;
+    width:42px;flex:none;display:grid;place-items:center;border-right:1px solid var(--linea);
+  }
+  .ranura.libre .num{border-right-style:dashed}
+  .ranura:not(.libre) .num{color:var(--acento)}
+  .ranura .zona{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding-right:13px}
+  .ranura .ficha{
+    flex:1;min-width:0;border:0;background:transparent;border-radius:0;
+    padding:13px 14px;cursor:pointer;
+  }
+  .ranura .ficha:hover{background:rgba(255,255,255,.035);transform:none}
+  .ranura.bien{border-left-color:var(--ok)}
+  .ranura.fuera{border-left-color:var(--tibio)}
+  .ranura.mal{border-left-color:var(--mal)}
+  .marca{font-family:var(--mono);font-size:14px;font-weight:700;flex:none;width:16px;text-align:center}
+  .marca.bien{color:var(--ok)}
+  .marca.fuera{color:var(--tibio)}
+  .marca.mal{color:var(--mal)}
+  @keyframes tiembla{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+  .ranura.tiembla{animation:tiembla .2s ease 2}
+
+  /* ---- controles ---- */
+  .controles{display:flex;gap:8px;margin-top:18px}
+  button{
+    font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    padding:13px 22px;border-radius:8px;cursor:pointer;border:1px solid var(--acento);
+    background:var(--acento);color:#06231D;
+    transition:opacity .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
+  }
+  button:not(:disabled):hover{box-shadow:0 8px 24px -12px rgba(76,224,192,.9)}
+  button.secundario{background:transparent;color:var(--suave);border-color:var(--linea)}
+  button.secundario:hover{border-color:var(--linea-2);color:var(--tinta);box-shadow:none}
+  button:disabled{opacity:.24;cursor:default}
+  button:focus-visible{outline:2px solid var(--acento-2);outline-offset:2px}
+
+  /* ---- lectura de estado ---- */
+  .leyenda{
+    display:flex;flex-wrap:wrap;gap:7px 20px;margin:16px 0 0;padding:0;list-style:none;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--suave);
+  }
+  .leyenda[hidden],.estado[hidden]{display:none}
+  .leyenda li{display:flex;align-items:baseline;gap:7px}
+  .leyenda i{font-style:normal;font-weight:700;font-size:12px}
+  .leyenda .bien i{color:var(--ok)}
+  .leyenda .fuera i{color:var(--tibio)}
+  .leyenda .mal i{color:var(--mal)}
+  .estado{
+    margin:16px 0 0;padding:12px 14px;border:1px solid rgba(76,224,192,.35);border-radius:8px;
+    background:rgba(76,224,192,.07);
+    font-family:var(--mono);font-size:11px;line-height:1.6;letter-spacing:.04em;color:var(--acento);
+  }
+  .estado b{display:block;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:4px}
+  .estado span{color:var(--suave)}
+
+  /* ---- resuelto: la definición se revela dentro de cada elemento ---- */
+  .resuelto .ficha{cursor:default}
+  .resuelto .ficha:hover{transform:none;border-color:var(--linea)}
+  .resuelto #banco{gap:7px}
+  .resuelto #banco .ficha{
+    flex:1 1 100%;border-left:2px solid var(--mal);
+    background:var(--panel-2);border-color:var(--linea);
+  }
+  .resuelto .ranura{background:var(--panel);border-color:var(--linea);border-left-color:var(--ok)}
+  .resuelto .ranura .zona{align-items:flex-start}
+  .resuelto .ficha .def{
+    display:block;font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--suave);
+    font-weight:400;margin-top:6px;max-width:56ch;
+  }
+  .resuelto .ranura .ficha .claves{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  .resuelto .claves span{
+    font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--suave);border:1px solid var(--linea);border-radius:999px;padding:3px 9px;
+  }
+  .resuelto .ranura .ficha{padding:13px 14px 15px}
+  .resuelto .marca{margin-top:14px}
+
+  .pie{
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--linea-2);
+    margin:clamp(34px,6vh,52px) 0 0;padding-top:14px;border-top:1px solid var(--linea);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="hoja">
+
+  <p class="kicker">Taller 01 <em>/</em> Método científico</p>
+
+  <header>
+    <h1>Ordena el <u>método</u> <i>· seis etapas, un solo orden</i></h1>
+    <div class="marcadores">
+      <span class="dato" id="d-tiempo"><b id="tiempo">00:00</b><span>tiempo</span></span>
+      <span class="dato" id="d-aciertos" hidden><b id="aciertos">0</b><span>de 6 ok</span></span>
+      <span class="dato"><b id="intentos">0</b><span>intentos</span></span>
+    </div>
+  </header>
+  <div class="barra"><i id="avance"></i></div>
+
+  <section class="portada" id="portada">
+    <p class="portada-k">Ejercicio listo</p>
+    <h2>Quince términos. Seis son etapas del método científico y van en un único orden.</h2>
+    <ul class="reglas">
+      <li>El cronómetro arranca al pulsar Inicio y no se detiene con una revisión fallida.</li>
+      <li>Solo para cuando las seis etapas quedan completas y en el orden correcto.</li>
+      <li>Las nueve palabras restantes no son etapas: al terminar verás por qué.</li>
+    </ul>
+    <button id="btn-inicio">Inicio</button>
+  </section>
+
+  <div class="mesa" id="mesa" hidden>
+    <section>
+      <p class="rotulo">Banco de términos <b id="conteo-banco">15</b></p>
+      <div id="banco"></div>
+      <p class="pista">
+        Arrastra un término hasta su posición, o selecciónalo con <kbd>Enter</kbd> y toca la ranura.<br>
+        Solo seis de estas palabras son etapas del método. Las demás no son evidencia.
+      </p>
+    </section>
+
+    <section>
+      <p class="rotulo">Secuencia <b id="progreso">0 <em>/ 6</em></b></p>
+      <div id="secuencia"></div>
+      <div class="controles">
+        <button id="btn-revisar" disabled>Revisar</button>
+        <button id="btn-reiniciar" class="secundario">Nueva ronda</button>
+      </div>
+      <ul class="leyenda" id="leyenda" hidden>
+        <li class="bien"><i>✓</i>en su lugar</li>
+        <li class="fuera"><i>●</i>es etapa, otro lugar</li>
+        <li class="mal"><i>✗</i>no es una etapa</li>
+      </ul>
+      <p class="estado" id="estado" hidden aria-live="polite"></p>
+    </section>
+  </div>
+
+  <p class="pie"><span>Unillanos</span><span id="pie-ronda">Ronda 01</span></p>
+
+</div>
+
+<script>
+const ETAPAS = [
+  {t:"Observación",
+   d:"Todo empieza mirando con atención un hecho o fenómeno y registrando sistemáticamente lo que ocurre, sin adelantar explicaciones.",
+   k:["registrar","describir","hecho"]},
+  {t:"Pregunta de investigación",
+   d:"La observación se convierte en un problema formulado con precisión: qué quiero saber, sobre qué población y en qué contexto.",
+   k:["delimitar","problema","alcance"]},
+  {t:"Hipótesis",
+   d:"Una respuesta provisional a esa pregunta, redactada de forma que pueda ponerse a prueba y, sobre todo, que pueda resultar falsa.",
+   k:["predecir","falsable","variables"]},
+  {t:"Experimentación",
+   d:"El diseño y la ejecución de la prueba: variables independientes y dependientes, grupo control, instrumentos, muestra y datos.",
+   k:["diseñar","controlar","medir"]},
+  {t:"Análisis de resultados",
+   d:"Los datos se organizan, procesan e interpretan para ver si respaldan o contradicen la hipótesis, y con qué margen de error.",
+   k:["procesar","comparar","interpretar"]},
+  {t:"Conclusiones",
+   d:"Se responde la pregunta con lo que muestran los datos, se reconocen los límites del estudio y se comunica para que otros lo revisen.",
+   k:["concluir","limitar","comunicar"]}
+];
+
+/* Banco ampliado: en cada ronda se sortean POR_RONDA términos de este conjunto,
+   así el juego cambia de una sesión a otra sin volverse interminable. */
+const DISTRACTORES = [
+  {t:"Opinión personal",       d:"Vale como punto de partida, pero no es evidencia: nadie más puede contrastarla."},
+  {t:"Corazonada",             d:"Puede sugerir una hipótesis; no la reemplaza ni la demuestra."},
+  {t:"Creencia popular",       d:"Que algo se repita mucho no lo vuelve comprobado."},
+  {t:"Anécdota",               d:"Un caso suelto no autoriza a generalizar a toda una población."},
+  {t:"Cita de autoridad",      d:"Quién lo dice no sustituye la prueba: el peso está en los datos."},
+  {t:"Sentido común",          d:"Sirve para orientarse; es insuficiente para concluir."},
+  {t:"Intuición",              d:"Buena para imaginar preguntas, incapaz de responderlas sola."},
+  {t:"Tradición",              d:"«Siempre se ha hecho así» no es una razón metodológica."},
+  {t:"Encuesta informal",      d:"Sin muestreo ni control mide quién quiso responder, no la realidad."},
+  {t:"Testimonio aislado",     d:"Sin comparación no distingue una causa de una coincidencia."},
+  {t:"Consenso en redes",      d:"El volumen de likes no equivale a peso de evidencia."},
+  {t:"Analogía suelta",        d:"«Se parece a» no prueba que se comporte igual."},
+  {t:"Prejuicio",              d:"Conclusión decidida antes de mirar los datos."},
+  {t:"Titular de prensa",      d:"Resume, simplifica y a veces exagera: no es la fuente original."},
+  {t:"Rumor",                  d:"Información sin origen verificable ni registro que revisar."},
+  {t:"Moda académica",         d:"Que un tema esté de moda no valida el método con que se estudia."},
+  {t:"Experiencia sin registro",d:"Lo recordado se deforma; sin registro no es un dato."},
+  {t:"Dato sin fuente",        d:"Una cifra que no se puede rastrear no se puede verificar."}
+];
+
+const POR_RONDA = 9;   /* distractores sorteados: 6 etapas + 9 = 15 fichas en pantalla */
+
+let fichas = [], ranuras = new Array(6).fill(null), elegida = null;
+let intentos = 0, ronda = 0, resuelto = false;
+
+const banco      = document.getElementById("banco");
+const secuencia  = document.getElementById("secuencia");
+const leyenda    = document.getElementById("leyenda");
+const estado     = document.getElementById("estado");
+const avance     = document.getElementById("avance");
+const mesa       = document.getElementById("mesa");
+const portada    = document.getElementById("portada");
+const btnRevisar = document.getElementById("btn-revisar");
+
+function mezclar(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* ---------- cronómetro: arranca en Inicio, solo para al resolver ---------- */
+let t0 = 0, transcurrido = 0, reloj = null;
+const elTiempo  = document.getElementById("tiempo");
+const cajaTiempo = document.getElementById("d-tiempo");
+
+function formato(ms){
+  const s = Math.floor(ms/1000);
+  return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
+}
+function pintarReloj(){ elTiempo.textContent = formato(transcurrido); }
+function arrancarReloj(){
+  t0 = Date.now(); transcurrido = 0; pintarReloj();
+  clearInterval(reloj);
+  reloj = setInterval(() => { transcurrido = Date.now() - t0; pintarReloj(); }, 200);
+  cajaTiempo.classList.add("corriendo");
+  elTiempo.classList.remove("pleno");
+}
+function pararReloj(){
+  if(reloj){ transcurrido = Date.now() - t0; pintarReloj(); }
+  clearInterval(reloj); reloj = null;
+  cajaTiempo.classList.remove("corriendo");
+}
+
+/* ---------- ronda ---------- */
+function prepararRonda(){
+  pararReloj();
+  transcurrido = 0; pintarReloj();
+  elTiempo.classList.remove("pleno");
+
+  const sorteo = mezclar(DISTRACTORES.slice()).slice(0, POR_RONDA);
+  fichas = mezclar([
+    ...ETAPAS.map((e,i) => ({id:"e"+i, texto:e.t, def:e.d, claves:e.k, orden:i})),
+    ...sorteo.map((e,i)  => ({id:"d"+i, texto:e.t, def:e.d, claves:null, orden:null}))
+  ]);
+  ranuras = new Array(6).fill(null);
+  elegida = null; intentos = 0; resuelto = false;
+  ronda++;
+  document.body.classList.remove("resuelto");
+  document.getElementById("intentos").textContent = "0";
+  document.getElementById("d-aciertos").hidden = true;
+  document.getElementById("aciertos").classList.remove("pleno");
+  document.getElementById("pie-ronda").textContent = "Ronda " + String(ronda).padStart(2,"0");
+  leyenda.hidden = true;
+  estado.hidden = true;
+  dibujar();
+
+  /* las palabras permanecen ocultas hasta pulsar Inicio */
+  mesa.hidden = true;
+  portada.hidden = false;
+  document.querySelector(".portada-k").textContent = ronda > 1 ? "Ronda " + String(ronda).padStart(2,"0") + " lista" : "Ejercicio listo";
+}
+
+function comenzar(){
+  portada.hidden = true;
+  mesa.hidden = false;
+  dibujar();
+  arrancarReloj();
+  const primera = banco.querySelector(".ficha");
+  if(primera) primera.focus();
+}
+
+function crearFicha(f, enRanura){
+  const el = document.createElement("div");
+  el.className = "ficha" + (elegida === f.id ? " elegida" : "");
+  el.dataset.id = f.id;
+  el.tabIndex = resuelto ? -1 : 0;
+  el.setAttribute("role","button");
+  el.setAttribute("aria-label", f.texto + (enRanura ? " — colocada, activa para devolverla al banco" : " — activa para elegirla"));
+  el.innerHTML = '<span class="rot"></span><span class="def"></span><span class="claves"></span>';
+  el.querySelector(".rot").textContent = f.texto;
+  el.querySelector(".def").textContent = f.def;
+  if(f.claves){
+    const c = el.querySelector(".claves");
+    f.claves.forEach(k => { const s = document.createElement("span"); s.textContent = k; c.appendChild(s); });
+  }
+  if(!resuelto){
+    el.addEventListener("pointerdown", e => empezarArrastre(e, f.id, el));
+    el.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); tocarFicha(f.id); }
+    });
+  }
+  return el;
+}
+
+function dibujar(){
+  banco.innerHTML = "";
+  const enBanco = fichas.filter(f => !ranuras.includes(f.id));
+  enBanco.forEach(f => banco.appendChild(crearFicha(f, false)));
+  document.getElementById("conteo-banco").textContent = enBanco.length;
+
+  const puestas = ranuras.filter(Boolean).length;
+  document.getElementById("progreso").innerHTML = puestas + ' <em>/ 6</em>';
+  avance.style.width = (puestas / 6 * 100) + "%";
+  btnRevisar.disabled = resuelto || puestas < 6;
+
+  secuencia.innerHTML = "";
+  for(let i=0;i<6;i++){
+    const r = document.createElement("div");
+    r.className = "ranura" + (ranuras[i] ? "" : " libre") + (!ranuras[i] && elegida ? " disponible" : "");
+    r.dataset.ranura = i;
+
+    const num = document.createElement("div");
+    num.className = "num";
+    num.textContent = String(i+1).padStart(2,"0");
+
+    const zona = document.createElement("div");
+    zona.className = "zona";
+    if(ranuras[i]) zona.appendChild(crearFicha(fichas.find(x => x.id === ranuras[i]), true));
+
+    r.appendChild(num); r.appendChild(zona);
+    r.addEventListener("click", () => { if(elegida) colocar(elegida, i); });
+    secuencia.appendChild(r);
+  }
+}
+
+function tocarFicha(id){
+  if(resuelto) return;
+  const posicion = ranuras.indexOf(id);
+  if(posicion !== -1){ ranuras[posicion] = null; elegida = null; limpiarMarcas(); dibujar(); return; }
+  elegida = (elegida === id) ? null : id;
+  dibujar();
+}
+
+function colocar(id, i){
+  if(resuelto) return;
+  const previa = ranuras.indexOf(id);
+  if(previa !== -1) ranuras[previa] = null;
+  ranuras[i] = id;          /* si había otra ficha, vuelve sola al banco */
+  elegida = null;
+  limpiarMarcas();
+  dibujar();
+}
+
+function limpiarMarcas(){
+  document.querySelectorAll(".ranura").forEach(r => r.classList.remove("bien","fuera","mal"));
+  estado.hidden = true;
+}
+
+/* ---------- arrastre con pointer events (ratón + táctil) ---------- */
+let arrastre = null;
+
+function empezarArrastre(e, id, el){
+  if(resuelto || e.button === 1 || e.button === 2) return;
+  const rect = el.getBoundingClientRect();
+  arrastre = {
+    id, el, movido:false,
+    dx: e.clientX - rect.left, dy: e.clientY - rect.top,
+    ancho: rect.width, x0: e.clientX, y0: e.clientY, fantasma:null
+  };
+  el.setPointerCapture(e.pointerId);
+  el.addEventListener("pointermove", moverArrastre);
+  el.addEventListener("pointerup", terminarArrastre);
+  el.addEventListener("pointercancel", terminarArrastre);
+}
+
+function moverArrastre(e){
+  if(!arrastre) return;
+  const dist = Math.hypot(e.clientX - arrastre.x0, e.clientY - arrastre.y0);
+  if(!arrastre.movido && dist < 6) return;
+  if(!arrastre.movido){
+    arrastre.movido = true;
+    const g = arrastre.el.cloneNode(true);
+    g.classList.add("fantasma");
+    g.classList.remove("elegida");
+    g.style.width = arrastre.ancho + "px";
+    document.body.appendChild(g);
+    arrastre.fantasma = g;
+    arrastre.el.classList.add("arrastrando");
+  }
+  arrastre.fantasma.style.left = (e.clientX - arrastre.dx) + "px";
+  arrastre.fantasma.style.top  = (e.clientY - arrastre.dy) + "px";
+  const r = ranuraBajo(e.clientX, e.clientY);
+  document.querySelectorAll(".ranura").forEach(x => x.classList.toggle("activa", x === r));
+}
+
+function ranuraBajo(x, y){
+  if(arrastre && arrastre.fantasma) arrastre.fantasma.style.display = "none";
+  const el = document.elementFromPoint(x, y);
+  if(arrastre && arrastre.fantasma) arrastre.fantasma.style.display = "";
+  return el ? el.closest(".ranura") : null;
+}
+
+function terminarArrastre(e){
+  if(!arrastre) return;
+  const {id, el, movido, fantasma} = arrastre;
+  el.removeEventListener("pointermove", moverArrastre);
+  el.removeEventListener("pointerup", terminarArrastre);
+  el.removeEventListener("pointercancel", terminarArrastre);
+  const r = movido ? ranuraBajo(e.clientX, e.clientY) : null;
+  if(fantasma) fantasma.remove();
+  el.classList.remove("arrastrando");
+  document.querySelectorAll(".ranura").forEach(x => x.classList.remove("activa"));
+  arrastre = null;
+  if(!movido){ tocarFicha(id); return; }
+  if(r) colocar(id, +r.dataset.ranura);
+  else if(ranuras.includes(id)){ ranuras[ranuras.indexOf(id)] = null; limpiarMarcas(); dibujar(); }
+  else dibujar();
+}
+
+/* ---------- revisión ---------- */
+btnRevisar.addEventListener("click", () => {
+  if(resuelto || ranuras.some(x => x === null)) return;
+
+  intentos++;
+  document.getElementById("intentos").textContent = intentos;
+
+  let correctas = 0, intrusas = 0;
+  const cajas = document.querySelectorAll(".ranura");
+  ranuras.forEach((id, i) => {
+    const f = fichas.find(x => x.id === id);
+    const tipo = f.orden === i ? "bien" : (f.orden === null ? "mal" : "fuera");
+    if(tipo === "bien") correctas++;
+    if(tipo === "mal")  intrusas++;
+
+    cajas[i].classList.add(tipo);
+    const marca = document.createElement("span");
+    marca.className = "marca " + tipo;
+    marca.textContent = tipo === "bien" ? "✓" : (tipo === "mal" ? "✗" : "●");
+    cajas[i].querySelector(".zona").appendChild(marca);
+
+    if(tipo !== "bien"){
+      cajas[i].classList.add("tiembla");
+      setTimeout(() => cajas[i].classList.remove("tiembla"), 480);
+    }
+  });
+
+  const dAciertos = document.getElementById("d-aciertos");
+  const nAciertos = document.getElementById("aciertos");
+  dAciertos.hidden = false;
+  nAciertos.textContent = correctas;
+  nAciertos.classList.toggle("pleno", correctas === 6);
+  leyenda.hidden = correctas === 6;
+
+  if(correctas === 6) revelar();
+  else pista(correctas, intrusas);
+});
+
+function pista(correctas, intrusas){
+  estado.hidden = false;
+  const linea = intrusas
+    ? "Hay " + intrusas + (intrusas === 1 ? " término que no pertenece al método." : " términos que no pertenecen al método.")
+    : "Todas son etapas: solo falta corregir el orden.";
+  estado.innerHTML = '<b>Revisión ' + String(intentos).padStart(2,"0") + '</b>' +
+                     '<span>' + correctas + ' de 6 en su lugar. ' + linea +
+                     ' El cronómetro sigue corriendo.</span>';
+}
+
+/* al resolver, cada elemento muestra su propia información */
+function revelar(){
+  resuelto = true;
+  btnRevisar.disabled = true;
+  pararReloj();
+  elTiempo.classList.add("pleno");
+  document.body.classList.add("resuelto");
+  const marcas = Array.prototype.map.call(document.querySelectorAll(".ranura .marca"), m => m.outerHTML);
+  dibujar();
+  document.querySelectorAll(".ranura").forEach((r, i) => {
+    r.classList.add("bien");
+    r.querySelector(".zona").insertAdjacentHTML("beforeend", marcas[i]);
+  });
+  estado.hidden = false;
+  estado.innerHTML = '<b>Secuencia validada · ' + formato(transcurrido) + '</b><span>Seis etapas en orden tras ' +
+                     intentos + (intentos === 1 ? ' intento' : ' intentos') +
+                     '. Cronómetro detenido. Abajo queda la definición de cada etapa; a la izquierda, por qué las demás no son evidencia.</span>';
+}
+
+document.getElementById("btn-inicio").addEventListener("click", comenzar);
+document.getElementById("btn-reiniciar").addEventListener("click", prepararRonda);
+prepararRonda();
+</script>
+</body>
+</html>

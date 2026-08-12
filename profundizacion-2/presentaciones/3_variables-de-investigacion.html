@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La variable de investigación · animación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A1420; --cream:#F2EBDD; --amber:#F5A524;
+    --leaf:#5FC594; --leaf-dim:#4A7461; --slate:#63788F; --water:#7FC9D9;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--navy);overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+  #deck{width:100vw;height:100vh}
+  .scene{width:100vw;height:100vh;display:none;cursor:pointer}
+  .scene.active{display:block}
+
+  /* ---------- tipografía de la escena ---------- */
+  .term{font-size:42px;font-weight:600;letter-spacing:.15em;fill:var(--cream);text-transform:uppercase}
+  .sup{font-size:11px;letter-spacing:.34em;fill:var(--slate);text-transform:uppercase}
+  .term-rule{stroke:var(--amber);stroke-width:2.5}
+  .kw{font-size:19px;font-weight:600;letter-spacing:.32em;fill:var(--amber);text-transform:uppercase;
+      opacity:0;transform:translateY(10px);transition:opacity .8s ease,transform .8s ease}
+  .kw.on{opacity:1;transform:none}
+  .tag{font-size:10.5px;letter-spacing:.22em;fill:var(--slate);text-transform:uppercase}
+  .tag.hot{fill:var(--amber)}
+  .tag.ok{fill:var(--leaf)}
+  .tag.ink{fill:var(--cream)}
+  .val{font-size:11px;letter-spacing:.1em;fill:var(--slate)}
+  .line{font-size:15px;letter-spacing:.05em;fill:var(--cream)}
+  .line.dim{fill:var(--slate)}
+  .big{font-size:26px;letter-spacing:.06em;fill:var(--slate)}
+  .qbig{font-size:17px;letter-spacing:.05em;fill:var(--cream)}
+  .tick{fill:var(--slate);opacity:.3;transition:opacity .5s,fill .5s}
+  .tick.on{fill:var(--amber);opacity:1}
+  .pager{font-size:10px;letter-spacing:.24em;fill:var(--slate);opacity:.75}
+
+  /* ---------- utilidades de estado ---------- */
+  .fade{opacity:0;transition:opacity 1.3s ease}
+  .fade.on{opacity:1}
+  .dim,.fade.on.dim{opacity:.2;transition:opacity 1s ease}
+  .mov{transition:transform 3.2s cubic-bezier(.45,.05,.35,1)}
+  .mov2{transition:transform 1.6s cubic-bezier(.3,.1,.3,1)}
+  .draw{stroke-dasharray:var(--len,1000);stroke-dashoffset:var(--len,1000);
+        transition:stroke-dashoffset 3.4s cubic-bezier(.4,0,.3,1)}
+  .draw.on{stroke-dashoffset:0}
+
+  /* ---------- bucles lentos y permanentes ---------- */
+  .glow{animation:glow 2.6s ease-in-out infinite}
+  @keyframes glow{0%,100%{opacity:.30}50%{opacity:1}}
+  .pulseBar{animation:pb 5.4s ease-in-out infinite alternate}
+  @keyframes pb{from{opacity:.72}to{opacity:1}}
+
+  /* ---------- elementos gráficos ---------- */
+  .axis{stroke:var(--slate);stroke-width:1.4}
+  .grid{stroke:#18293E;stroke-width:1}
+  .guide{stroke:var(--slate);stroke-width:1;stroke-dasharray:3 6;opacity:.6}
+  .bracket{fill:none;stroke:var(--amber);stroke-width:1.8}
+  .dlt{font-size:19px;fill:var(--amber);font-weight:600}
+  .bar{fill:#2C5C7A}
+  .barT{fill:var(--amber);opacity:.85}
+  .dot{fill:var(--leaf)}
+  .dotHot{fill:var(--amber)}
+  .trend{fill:none;stroke:var(--amber);stroke-width:2}
+  .tile{fill:#1B2C44;stroke:var(--cream);stroke-width:2}
+  .tileHot{fill:#2A2013;stroke:var(--amber);stroke-width:2}
+  .arrow{fill:none;stroke:var(--amber);stroke-width:2.2}
+  .arrowDim{fill:none;stroke:var(--slate);stroke-width:1.8}
+  .blocked{fill:none;stroke:var(--slate);stroke-width:1.6;stroke-dasharray:4 5}
+  .cone{fill:var(--amber);opacity:.12}
+  .future{stroke:var(--amber);stroke-width:2;stroke-dasharray:7 7;fill:none}
+  .box{fill:none;stroke:var(--slate);stroke-width:1.4;stroke-dasharray:8 9}
+  .panel{fill:#101E30;stroke:#1D3049}
+  .fog{fill:#16263C;opacity:.5}
+  .err{fill:none;stroke:var(--amber);stroke-width:1.6}
+  .qm{font-size:22px;font-weight:600;fill:var(--slate)}
+
+  .ui{position:fixed;bottom:20px;right:24px;display:flex;gap:8px;
+      opacity:0;pointer-events:none;transition:opacity .4s ease}
+  body.show-ui .ui{opacity:1;pointer-events:auto}
+  .ui button{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--slate);background:transparent;border:1px solid #1D3049;border-radius:2px;
+    padding:8px 11px;cursor:pointer;transition:color .2s,border-color .2s}
+  .ui button:hover{color:var(--amber);border-color:var(--amber)}
+  .ui button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+  @media (prefers-reduced-motion:reduce){*{transition-duration:.001ms !important;animation:none !important}}
+</style>
+</head>
+<body>
+<div id="deck"></div>
+<div class="ui">
+  <button id="prev" type="button">Atrás</button>
+  <button id="next" type="button">Siguiente</button>
+  <button id="replay" type="button">Repetir</button>
+</div>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   NÚCLEO COMPARTIDO — no hace falta tocarlo para añadir escenas
+   ══════════════════════════════════════════════════════════════════════════ */
+const NS='http://www.w3.org/2000/svg';
+const deck=document.getElementById('deck');
+const W=1000,H=562,BASE=444;
+
+function el(tag,attrs,parent){
+  const n=document.createElementNS(NS,tag);
+  if(attrs) for(const k in attrs) n.setAttribute(k,attrs[k]);
+  if(parent) parent.appendChild(n);
+  return n;
+}
+function txt(parent,cls,x,y,s,extra){
+  const t=el('text',Object.assign({class:cls,x:x,y:y},extra||{}),parent);
+  t.textContent=s; return t;
+}
+const seeded=s=>()=>(s=(s*1664525+1013904223)>>>0)/4294967296;
+const stagger=(nodes,step,start)=>nodes.forEach((n,i)=>n.style.transitionDelay=((start||0)+i*step).toFixed(2)+'s');
+const on=(n,v)=>n.classList.toggle('on',!!v);
+
+/* fondo: aire, piso con grano y viñeteado.
+   opts: {dark} cielo más cerrado · {flat} sin piso ni grano
+         {ground:y} altura del horizonte (444 por defecto) · {grain:false} sin motas */
+function background(svg,i,opts){
+  opts=opts||{};
+  const G=opts.ground||BASE;
+  const d=el('defs',null,svg), p='g'+i;
+  const air=el('linearGradient',{id:p+'air',x1:0,y1:0,x2:0,y2:1},d);
+  el('stop',{offset:0,'stop-color':opts.dark?'#0C1828':'#122238'},air);
+  el('stop',{offset:1,'stop-color':'#0A1420'},air);
+  const so=el('linearGradient',{id:p+'soil',x1:0,y1:0,x2:0,y2:1},d);
+  el('stop',{offset:0,'stop-color':opts.dark?'#141C2A':'#1C2637'},so);
+  el('stop',{offset:1,'stop-color':'#0C1420'},so);
+  const vg=el('radialGradient',{id:p+'vig',cx:.5,cy:.45,r:.78},d);
+  el('stop',{offset:.55,'stop-color':'#000','stop-opacity':0},vg);
+  el('stop',{offset:1,'stop-color':'#000','stop-opacity':.5},vg);
+
+  el('rect',{x:0,y:0,width:W,height:G,fill:'url(#'+p+'air)'},svg);
+  el('rect',{x:0,y:G,width:W,height:H-G,fill:'url(#'+p+'soil)'},svg);
+  if(!opts.flat){
+    el('path',{d:'M0,'+(G-36)+' H1000 M0,'+(G-20)+' H1000',stroke:'#16263C','stroke-width':1,opacity:.65},svg);
+    if(opts.grain!==false){
+      const g=el('g',{opacity:.4},svg), r=seeded(7+i*13);
+      for(let k=0;k<120;k++) el('ellipse',{cx:r()*W,cy:G+4+r()*(H-G-6),rx:.6+r()*1.7,ry:.5+r()*1,
+        fill:r()>.5?'#31445F':'#0A1220'},g);
+    }
+    el('path',{d:'M0,'+G+' H1000',stroke:'#2A3C58','stroke-width':1,opacity:.7},svg);
+  }
+  return p;
+}
+const vignette=(svg,p)=>el('rect',{x:0,y:0,width:W,height:H,fill:'url(#'+p+'vig)','pointer-events':'none'},svg);
+
+/* término, superíndice, palabra clave, marcas de avance y paginador.
+   Devuelve setKw(beat), que hay que llamar al final de cada render. */
+function chrome(svg,cfg,idx,total){
+  txt(svg,'sup',34,52,cfg.sup);
+  txt(svg,'term',34,96,cfg.term);
+  el('line',{class:'term-rule',x1:36,y1:114,x2:122,y2:114},svg);
+  const kw=txt(svg,'kw',34,530,'');
+  const ticks=cfg.kws.map((_,i)=>el('rect',{class:'tick',x:898+i*22,y:524,width:14,height:2.5,rx:1},svg));
+  txt(svg,'pager',966,52,String(idx+1).padStart(2,'0')+' / '+String(total).padStart(2,'0'),{'text-anchor':'end'});
+  return function(beat){
+    kw.classList.remove('on'); kw.getBoundingClientRect();
+    kw.textContent=cfg.kws[beat];
+    requestAnimationFrame(()=>kw.classList.add('on'));
+    ticks.forEach((t,i)=>on(t,i<=beat));
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMPONENTES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* corchete con Δ entre dos alturas */
+function makeDelta(parent){
+  const g=el('g',{class:'fade'},parent);
+  const brk=el('path',{class:'bracket'},g);
+  const t=txt(g,'dlt',0,0,'Δ');
+  return {g,
+    set(x,yA,yB,label){
+      brk.setAttribute('d','M'+x+','+yA+' h9 M'+(x+9)+','+yA+' V'+yB+' M'+x+','+yB+' h9');
+      t.setAttribute('x',x+18);
+      t.setAttribute('y',((yA+yB)/2+7).toFixed(0));
+      t.textContent=label;
+    }};
+}
+
+/* tarjeta de texto: título en ámbar y N líneas en crema */
+function makeCard(parent,x,y,w,title,lines){
+  const h=44+lines.length*26;
+  const g=el('g',{class:'fade'},parent);
+  el('rect',{class:'panel',x:x,y:y,width:w,height:h,rx:3},g);
+  if(title) txt(g,'tag hot',x+18,y+26,title);
+  lines.forEach((s,i)=>txt(g,'line',x+18,y+58+i*26,s));
+  return {g,h};
+}
+
+/* ficha rotulada. El grupo exterior aparece (.fade) y el interior se desplaza
+   (.mov): así una ficha puede encenderse y, más tarde, viajar a otro sitio. */
+function makeChip(parent,x,y,w,h,label){
+  const g=el('g',{class:'fade'},parent);
+  const m=el('g',{class:'mov',transform:'translate('+x+','+y+')'},g);
+  const r=el('rect',{class:'tile',x:0,y:0,width:w,height:h,rx:3},m);
+  const t=txt(m,'tag ink',w/2,h/2+3.6,label,{'text-anchor':'middle'});
+  return {g,m,r,t,
+    hot(v){r.setAttribute('class',v?'tileHot':'tile');t.setAttribute('class',v?'tag hot':'tag ink');},
+    at(nx,ny){m.setAttribute('transform','translate('+nx+','+ny+')');}};
+}
+
+/* punta de flecha apuntando a la derecha, sobre (x,y) */
+const punta=(parent,x,y,cls)=>el('path',{class:cls||'arrow',
+  d:'M'+x+','+y+' l-13,-5 M'+x+','+y+' l-13,5'},parent);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ESCENAS
+
+   Cada escena es una función slideX(svg, idx, total) que:
+     1 · construye TODO el SVG una sola vez, y
+     2 · devuelve render(beat), que solo enciende y apaga lo ya construido.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ============ 01 · VARIABLE ============
+   La tabla mínima que separa lo que varía de lo que no. */
+function slideVariable(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const FILA=[218,258,298,338], XC=150, XB=300, XU=560;
+
+  const mesa=el('g',{class:'fade'},svg);
+
+  const tabla=el('g',null,mesa);
+  txt(tabla,'tag',XC,178,'caso');
+  el('line',{class:'grid',x1:140,y1:192,x2:700,y2:192},tabla);
+  FILA.forEach((y,i)=>txt(tabla,'val',XC,y,'caso 0'+(i+1)));
+
+  /* la columna que cambia de un caso a otro */
+  const colB=el('g',null,mesa);
+  txt(colB,'tag',XB,178,'horas de sueño');
+  ['6,0 h','7,5 h','5,0 h','8,0 h'].forEach((s,i)=>txt(colB,'line',XB,FILA[i],s));
+
+  /* la columna que repite el mismo valor en todos */
+  const colU=el('g',null,mesa);
+  txt(colU,'tag',XU,178,'universidad');
+  FILA.forEach(y=>txt(colU,'line',XU,y,'U. Nacional'));
+
+  const acento=el('g',{class:'fade'},mesa);
+  el('rect',{class:'barT',x:286,y:200,width:3,height:152},acento);
+  txt(acento,'tag hot',XB,372,'varía entre casos');
+
+  const cte=el('g',{class:'fade'},mesa);
+  el('rect',{class:'box',x:546,y:200,width:140,height:152,rx:2},cte);
+  txt(cte,'tag',546,372,'constante');
+
+  const ficha=makeCard(svg,150,388,700,'definición',
+    ['característica de los casos que toma valores distintos',
+     'si no cambia entre los casos, es una constante']);
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 01 de 09',term:'variable',
+    kws:['los casos','esta varía','esta no','característica que varía']},idx,total);
+
+  return function(beat){
+    on(mesa,true);
+    on(acento,beat>=1);
+    on(cte,beat>=2);
+    colU.classList.toggle('dim',beat>=2);
+    mesa.classList.toggle('dim',beat>=3);
+    on(ficha.g,beat>=3);
+    setKw(beat);
+  };
+}
+
+/* ============ 02 · NUMÉRICA ============
+   El número mide: se puede restar y promediar. De ahí salen las dos ramas. */
+function slideNumerica(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const X=v=>190+v*68, AY=300;
+
+  const base=el('g',{class:'fade'},svg);
+  txt(base,'tag',170,176,'horas de estudio a la semana · tres casos');
+  el('line',{class:'axis',x1:170,y1:AY,x2:890,y2:AY},base);
+  for(let v=0;v<=10;v++){
+    el('line',{class:'axis',x1:X(v),y1:AY,x2:X(v),y2:AY+7},base);
+    if(v%2===0) txt(base,'val',X(v),324,String(v),{'text-anchor':'middle'});
+  }
+  [2,5,9].forEach(v=>{
+    el('circle',{class:'dot',cx:X(v),cy:AY,r:7},base);
+    txt(base,'val',X(v),278,v+' h',{'text-anchor':'middle'});
+  });
+
+  /* la distancia entre dos valores es una cantidad real */
+  const dist=el('g',{class:'fade'},svg);
+  el('path',{class:'bracket',d:'M'+X(2)+',338 V346 H'+X(5)+' V338'},dist);
+  txt(dist,'tag hot',(X(2)+X(5))/2,366,'3 h',{'text-anchor':'middle'});
+  el('path',{class:'bracket',d:'M'+X(5)+',338 V346 H'+X(9)+' V338'},dist);
+  txt(dist,'tag hot',(X(5)+X(9))/2,366,'4 h',{'text-anchor':'middle'});
+  txt(dist,'tag ink',170,396,'la resta significa algo: 4 h es más que 3 h');
+
+  /* y por eso se puede promediar */
+  const media=el('g',{class:'fade'},svg);
+  el('path',{class:'future',d:'M'+X(16/3).toFixed(1)+',268 V312'},media);
+  txt(media,'tag hot',X(16/3),254,'media = 5,3 h',{'text-anchor':'middle'});
+  txt(media,'tag ink',170,396,'sumar y promediar tiene sentido');
+
+  const ramas=el('g',{class:'fade'},svg);
+  el('path',{class:'arrowDim',d:'M530,312 V400 M300,400 H760 M300,400 V438 M760,400 V438'},ramas);
+  txt(ramas,'val',300,498,'se cuenta',{'text-anchor':'middle'});
+  txt(ramas,'val',760,498,'se mide',{'text-anchor':'middle'});
+  const rama=[makeChip(ramas,210,438,180,42,'discreta'),
+              makeChip(ramas,670,438,180,42,'continua')];
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 02 de 09',term:'numérica',
+    kws:['el número mide','las distancias valen','admite promedio','dos ramas']},idx,total);
+
+  return function(beat){
+    on(base,true);
+    on(dist,beat===1);
+    on(media,beat===2);
+    on(ramas,beat>=3);
+    rama.forEach(c=>on(c.g,beat>=3));
+    setKw(beat);
+  };
+}
+
+/* ============ 03 · DISCRETA ============
+   Se cuenta: entre dos valores contiguos no hay nada. */
+function slideDiscreta(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const X=v=>210+v*105, AY=380;
+  const CNT=[2,5,8,5,3,1,0];              /* 24 casos · media 2,2 */
+
+  const plot=el('g',{class:'fade'},svg);
+  txt(plot,'tag',180,176,'número de hermanos · 24 casos');
+  el('line',{class:'axis',x1:180,y1:AY,x2:870,y2:AY},plot);
+  const puntos=[];
+  CNT.forEach((c,v)=>{
+    el('line',{class:'axis',x1:X(v),y1:AY,x2:X(v),y2:AY+7},plot);
+    txt(plot,'val',X(v),404,String(v),{'text-anchor':'middle'});
+    for(let k=0;k<c;k++) puntos.push(el('circle',{class:'dot',cx:X(v),cy:368-k*20,r:7},plot));
+  });
+  stagger(puntos,.05);
+
+  /* el valor que no puede existir */
+  const hueco=el('g',{class:'fade'},svg);
+  el('circle',{class:'dotHot',cx:X(2.5),cy:368,r:7},hueco);
+  el('path',{class:'blocked',d:'M'+(X(2.5)-13)+',355 L'+(X(2.5)+13)+',381 M'+(X(2.5)+13)+',355 L'+(X(2.5)-13)+',381'},hueco);
+  txt(hueco,'tag hot',X(2.5),430,'nadie tiene 2,5 hermanos',{'text-anchor':'middle'});
+
+  /* la media, en cambio, sí puede caer en el hueco */
+  const media=el('g',{class:'fade'},svg);
+  el('path',{class:'future',d:'M'+X(53/24).toFixed(1)+',400 V215'},media);
+  txt(media,'tag hot',X(53/24),430,'media = 2,2',{'text-anchor':'middle'});
+  txt(media,'tag ink',X(53/24),458,'ningún caso vale 2,2',{'text-anchor':'middle'});
+
+  const ficha=makeCard(svg,200,246,620,'ejemplos',
+    ['número de hijos · artículos publicados',
+     'inasistencias · intentos hasta acertar',
+     'respuestas correctas · veces que reincide']);
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 03 de 09',term:'discreta',
+    kws:['se cuenta','nada en medio','la media sí','cosas contables']},idx,total);
+
+  return function(beat){
+    on(plot,beat<3);          /* el gráfico ocupa todo el lienzo: cede el sitio a la tarjeta */
+    on(hueco,beat===1);
+    on(media,beat===2);
+    on(ficha.g,beat>=3);
+    setKw(beat);
+  };
+}
+
+/* ============ 04 · CONTINUA ============
+   Se mide: entre dos valores siempre cabe otro, y los decimales los pone el
+   instrumento, no la variable. */
+function slideContinua(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const R1=290, R2=440, X0=180, LEN=680;
+  const X=t=>X0+t*LEN;
+
+  const regla=el('g',{class:'fade'},svg);
+  txt(regla,'tag',170,176,'estatura de una persona');
+  el('line',{class:'axis',x1:X0,y1:R1,x2:X0+LEN,y2:R1},regla);
+  for(let i=0;i<=10;i++) el('line',{class:'axis',x1:X(i/10),y1:R1-6,x2:X(i/10),y2:R1+6},regla);
+  txt(regla,'val',X(0),318,'1,70',{'text-anchor':'middle'});
+  txt(regla,'val',X(.5),318,'1,75',{'text-anchor':'middle'});
+  txt(regla,'val',X(1),318,'1,80',{'text-anchor':'middle'});
+  el('circle',{class:'dotHot',cx:X(.34),cy:R1,r:6},regla);
+  txt(regla,'tag hot',X(.34),266,'1,734 m',{'text-anchor':'middle'});
+
+  const entre=el('g',{class:'fade'},svg);
+  txt(entre,'tag ink',X(.34),348,'no cae en ninguna marca',{'text-anchor':'middle'});
+
+  /* el acercamiento: dentro de un milímetro todavía hay sitio */
+  const zoom=el('g',{class:'fade'},svg);
+  el('polygon',{class:'cone',points:'408,298 415,298 860,406 180,406'},zoom);
+  el('line',{class:'axis',x1:X0,y1:R2,x2:X0+LEN,y2:R2},zoom);
+  for(let i=0;i<=10;i++) el('line',{class:'axis',x1:X(i/10),y1:R2-6,x2:X(i/10),y2:R2+6},zoom);
+  txt(zoom,'val',X0,464,'1,734');
+  txt(zoom,'val',X0+LEN,464,'1,735',{'text-anchor':'end'});
+  [[.2,'1,7342'],[.7,'1,7347']].forEach(([t,s])=>{
+    el('circle',{class:'dotHot',cx:X(t),cy:R2,r:6},zoom);
+    txt(zoom,'tag hot',X(t),422,s,{'text-anchor':'middle'});
+  });
+  txt(zoom,'tag ink',X0,490,'entre dos valores siempre cabe otro');
+
+  /* dos instrumentos, la misma persona, distinto número de decimales */
+  const instr=el('g',{class:'fade'},svg);
+  txt(instr,'tag',230,356,'cinta métrica');
+  txt(instr,'line',230,388,'1,73 m');
+  txt(instr,'tag',560,356,'estadiómetro láser');
+  txt(instr,'line',560,388,'1,7342 m');
+  txt(instr,'tag hot',230,436,'los decimales son del instrumento, no de la variable');
+
+  const ficha=makeCard(svg,200,372,620,'ejemplos',
+    ['estatura · peso · temperatura corporal',
+     'tiempo de reacción · ingreso mensual',
+     'presión arterial · horas de sueño']);
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 04 de 09',term:'continua',
+    kws:['se mide','siempre hay más','el instrumento','cualquier valor']},idx,total);
+
+  return function(beat){
+    on(regla,true);
+    regla.classList.toggle('dim',beat>=3);
+    on(entre,beat===0);
+    on(zoom,beat===1);
+    on(instr,beat===2);
+    on(ficha.g,beat>=3);
+    setKw(beat);
+  };
+}
+
+/* ============ 05 · CATEGÓRICA ============
+   Clasifica en vez de medir: contar por grupo sí, promediar los códigos no. */
+function slideCategorica(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const CAJA=[{x:180,n:11,s:'soltero'},{x:410,n:9,s:'casado'},{x:640,n:4,s:'viudo'}];
+
+  const grupos=el('g',{class:'fade'},svg);
+  txt(grupos,'tag',170,176,'estado civil · 24 casos');
+  const puntos=[];
+  CAJA.forEach(c=>{
+    el('rect',{class:'box',x:c.x,y:210,width:200,height:150,rx:2},grupos);
+    txt(grupos,'tag ink',c.x+100,384,c.s,{'text-anchor':'middle'});
+    for(let k=0;k<c.n;k++)
+      puntos.push(el('circle',{class:'dot',cx:c.x+34+(k%4)*44,cy:250+Math.floor(k/4)*36,r:6},grupos));
+  });
+  stagger(puntos,.05);
+
+  /* contar cuántos hay en cada grupo es legítimo */
+  const cuenta=el('g',{class:'fade'},grupos);
+  CAJA.forEach(c=>txt(cuenta,'tag ok',c.x+100,410,'n = '+c.n,{'text-anchor':'middle'}));
+
+  /* promediar los códigos, no */
+  const codigo=el('g',{class:'fade'},svg);
+  CAJA.forEach((c,i)=>txt(codigo,'val',c.x+100,200,String(i+1),{'text-anchor':'middle'}));
+  txt(codigo,'line',500,448,'(1×11 + 2×9 + 3×4) / 24 = 1,7',{'text-anchor':'middle'});
+  el('line',{class:'blocked',x1:350,y1:443,x2:650,y2:443},codigo);
+  txt(codigo,'tag hot',500,478,'el número es solo una etiqueta',{'text-anchor':'middle'});
+
+  const ramas=el('g',{class:'fade'},svg);
+  el('path',{class:'arrowDim',d:'M500,266 V292 M330,292 H670 M330,292 V318 M670,292 V318'},ramas);
+  txt(ramas,'tag ink',330,384,'sin orden',{'text-anchor':'middle'});
+  txt(ramas,'tag ink',670,384,'con orden',{'text-anchor':'middle'});
+  const rama=[makeChip(ramas,430,226,140,40,'categórica'),
+              makeChip(ramas,240,318,180,42,'nominal'),
+              makeChip(ramas,580,318,180,42,'ordinal')];
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 05 de 09',term:'categórica',
+    kws:['clasifica','cuenta, no mide','solo es etiqueta','dos ramas']},idx,total);
+
+  return function(beat){
+    on(grupos,beat<3);        /* las ramas caen justo encima: los grupos se apagan */
+    on(cuenta,beat>=1);
+    on(codigo,beat===2);
+    on(ramas,beat>=3);
+    rama.forEach(c=>on(c.g,beat>=3));
+    setKw(beat);
+  };
+}
+
+/* ============ 06 · NOMINAL ============
+   Solo nombra: reordenar las categorías no destruye nada. */
+function slideNominal(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const CASA=[170,395,620];
+
+  const cab=el('g',{class:'fade'},svg);
+  txt(cab,'tag',170,176,'carrera que estudia');
+
+  const fichas=el('g',{class:'fade'},svg);
+  const chip=['psicología','derecho','ingeniería'].map((s,i)=>makeChip(fichas,CASA[i],246,210,52,s));
+
+  const suelto=el('g',{class:'fade'},svg);
+  txt(suelto,'tag ink',170,340,'puedo colocarlas en cualquier orden: no se pierde nada');
+
+  /* la única comparación que la variable admite */
+  const comp=el('g',{class:'fade'},svg);
+  el('rect',{class:'barT',x:224,y:392,width:4,height:20},comp);
+  txt(comp,'line',250,406,'¿igual o distinto?');
+  txt(comp,'tag ok',560,406,'sí, es la única comparación');
+  txt(comp,'line',250,452,'¿mayor o menor?');
+  el('line',{class:'blocked',x1:246,y1:447,x2:400,y2:447},comp);
+  txt(comp,'tag',560,452,'no significa nada');
+
+  const ficha=makeCard(svg,200,372,620,'ejemplos',
+    ['sexo · estado civil · ciudad de origen',
+     'carrera · religión · tipo de sangre',
+     'sí / no · grupo control o experimental']);
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 06 de 09',term:'nominal',
+    kws:['solo nombra','sin orden','igual o distinto','etiquetas']},idx,total);
+
+  /* al reordenar, cada ficha ocupa el sitio de la siguiente */
+  return function(beat){
+    on(cab,true);
+    on(fichas,true);
+    chip.forEach((c,i)=>{
+      c.g.classList.toggle('on',true);
+      c.at(CASA[beat>=1?(i+2)%3:i],246);
+    });
+    fichas.classList.toggle('dim',beat>=3);
+    on(suelto,beat>=1&&beat<3);
+    on(comp,beat===2);
+    on(ficha.g,beat>=3);
+    setKw(beat);
+  };
+}
+
+/* ============ 07 · ORDINAL ============
+   Hay orden, pero los peldaños no miden lo mismo. */
+function slideOrdinal(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const CX=[170,370,570,770];
+  const PAR=[380,330,280,230];            /* peldaños regulares: sugieren distancia */
+  const DES=[400,356,268,230];            /* los de verdad: desiguales */
+
+  const cab=el('g',{class:'fade'},svg);
+  txt(cab,'tag',170,176,'¿con qué frecuencia estudias?');
+
+  const escalera=el('g',{class:'fade'},svg);
+  const chip=['nunca','a veces','casi siempre','siempre']
+    .map((s,i)=>makeChip(escalera,CX[i],PAR[i],160,44,s));
+
+  const orden=el('g',{class:'fade'},svg);
+  el('path',{class:'arrow',d:'M170,470 H930'},orden);
+  punta(orden,930,470);
+  txt(orden,'tag hot',550,496,'de menos a más',{'text-anchor':'middle'});
+
+  /* intentar reordenarlos destruye la información */
+  const swap=el('g',{class:'fade'},svg);
+  el('path',{class:'guide',d:'M450,378 V412 M650,328 V412'},swap);
+  el('path',{class:'arrowDim',d:'M452,412 H648 M452,412 l13,-5 M452,412 l13,5'
+                              +' M648,412 l-13,-5 M648,412 l-13,5'},swap);
+  el('path',{class:'blocked',style:'stroke-dasharray:none;stroke-width:2.6',
+    d:'M535,397 L565,427 M565,397 L535,427'},swap);
+  txt(swap,'tag ink',170,200,'si los reordeno, pierdo información');
+
+  /* pero la distancia entre peldaños no es comparable */
+  const pasos=el('g',{class:'fade'},svg);
+  txt(pasos,'tag ink',170,200,'los peldaños no miden lo mismo');
+  const d1=makeDelta(pasos), d2=makeDelta(pasos);
+  d1.set(336,DES[0],DES[1],'Δ');   /* en el hueco entre dos peldaños, sin pisarlos */
+  d2.set(736,DES[2],DES[3],'Δ');
+
+  const ficha=makeCard(svg,170,240,680,'ejemplos',
+    ['nivel educativo · estrato socioeconómico',
+     'escala Likert · grado de dolor',
+     'puesto en el ranking · etapa de la enfermedad']);
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 07 de 09',term:'ordinal',
+    kws:['hay orden','el orden importa','pasos desiguales','ordena, no mide']},idx,total);
+
+  return function(beat){
+    on(cab,true);
+    on(escalera,beat<3);      /* la escalera cruza el lienzo entero: cede el sitio */
+    chip.forEach((c,i)=>{on(c.g,beat<3);c.at(CX[i],beat>=2?DES[i]:PAR[i]);});
+    on(orden,beat<3);
+    orden.classList.toggle('dim',beat>=2);
+    on(swap,beat===1);
+    on(pasos,beat===2);
+    on(d1.g,beat===2); on(d2.g,beat===2);
+    on(ficha.g,beat>=3);
+    setKw(beat);
+  };
+}
+
+/* ============ 08 · CLASIFICAR ============
+   El árbol completo, y las variables de un estudio real buscando su rama. */
+function slideClasificar(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const HOJA=[210,400,600,790];           /* centros de discreta, continua, nominal, ordinal */
+
+  const arbol=el('g',{class:'fade'},svg);
+  el('path',{class:'arrowDim',d:'M500,184 L305,224 M500,184 L695,224'},arbol);
+  el('path',{class:'arrowDim',d:'M305,264 L210,316 M305,264 L400,316'},arbol);
+  el('path',{class:'arrowDim',d:'M695,264 L600,316 M695,264 L790,316'},arbol);
+  const nodo=[makeChip(arbol,430,146,140,38,'variable'),
+              makeChip(arbol,215,226,180,38,'numérica'),
+              makeChip(arbol,605,226,180,38,'categórica'),
+              makeChip(arbol,125,318,170,38,'discreta'),
+              makeChip(arbol,315,318,170,38,'continua'),
+              makeChip(arbol,515,318,170,38,'nominal'),
+              makeChip(arbol,705,318,170,38,'ordinal')];
+
+  const guia=makeCard(svg,130,396,460,'¿cómo decido?',
+    ['1 · ¿el número mide o solo etiqueta?',
+     '2 · ¿se cuenta o se mide? ¿hay orden?']);
+
+  /* el mismo caso que abre el mazo del método científico */
+  const caso=el('g',{class:'fade'},svg);
+  txt(caso,'qbig',115,490,'¿estudiar con el celular reduce la retención?');
+
+  /* cada variable del estudio, y la hoja del árbol donde acaba */
+  const VAR=[{s:'usó el celular',fila:120,hoja:2,esc:'sí / no'},
+             {s:'distracción',   fila:330,hoja:3,esc:'baja · media · alta'},
+             {s:'aciertos',      fila:540,hoja:0,esc:'0 … 20'},
+             {s:'minutos de estudio',fila:750,hoja:1,esc:'0 … 90 min'}];
+  const vars=el('g',{class:'fade'},svg);
+  const chip=VAR.map(v=>makeChip(vars,v.fila,420,180,44,v.s));
+  const escalas=el('g',{class:'fade'},svg);
+  VAR.forEach(v=>txt(escalas,'val',HOJA[v.hoja],440,v.esc,{'text-anchor':'middle'}));
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 08 de 09',term:'clasificar',
+    kws:['el mapa','dos preguntas','un estudio','cada una a su rama']},idx,total);
+
+  return function(beat){
+    on(arbol,true);
+    nodo.forEach(c=>on(c.g,true));
+    stagger(nodo.map(c=>c.g),.12);
+    on(guia.g,beat===1);
+    on(caso,beat>=2);
+    on(vars,beat>=2);
+    chip.forEach((c,i)=>{
+      on(c.g,beat>=2);
+      c.at(beat>=3?HOJA[VAR[i].hoja]-90:VAR[i].fila, beat>=3?372:420);
+      c.hot(beat>=3);
+    });
+    on(escalas,beat>=3);
+    setKw(beat);
+  };
+}
+
+/* ============ 09 · PAPEL ============
+   Las mismas cuatro variables, clasificadas por un criterio distinto: no
+   sustituye a la escala de medición, se suma a ella. */
+function slidePapel(svg,idx,total){
+  const p=background(svg,idx,{flat:true,ground:H});
+  const FILA=[120,330,540,750];
+
+  const cab=el('g',{class:'fade'},svg);
+  txt(cab,'qbig',130,176,'la misma investigación, otra pregunta');
+  txt(cab,'tag',130,204,'¿qué papel juega cada variable?');
+
+  const vars=el('g',{class:'fade'},svg);
+  const chip=['usó el celular','distracción','aciertos','minutos de estudio']
+    .map((s,i)=>makeChip(vars,FILA[i],250,180,44,s));
+
+  /* la que muevo y la que observo */
+  const par=el('g',{class:'fade'},svg);
+  txt(par,'tag ink',220,310,'independiente',{'text-anchor':'middle'});
+  txt(par,'tag ink',780,310,'dependiente',{'text-anchor':'middle'});
+  const flecha=el('g',{class:'fade'},svg);
+  el('path',{class:'arrow',d:'M320,344 H672'},flecha);
+  punta(flecha,672,344);
+
+  /* las que se cuelan entre una y otra */
+  const medio=el('g',{class:'fade'},svg);
+  txt(medio,'tag ink',500,410,'intervinientes',{'text-anchor':'middle'});
+  el('path',{class:'guide',d:'M420,420 V350 M630,420 V350'},medio);
+
+  /* y la síntesis: cada variable arrastra también su escala de medición */
+  const doble=el('g',{class:'fade'},svg);
+  txt(doble,'tag hot',130,228,'cada variable lleva las dos etiquetas a la vez');
+  txt(doble,'tag ink',220,386,'nominal',{'text-anchor':'middle'});
+  txt(doble,'tag ink',780,386,'discreta',{'text-anchor':'middle'});
+  txt(doble,'tag ink',420,486,'ordinal',{'text-anchor':'middle'});
+  txt(doble,'tag ink',630,486,'continua',{'text-anchor':'middle'});
+
+  vignette(svg,p);
+  const setKw=chrome(svg,{sup:'concepto 09 de 09',term:'papel',
+    kws:['otra pregunta','causa y efecto','se cuelan en medio','dos criterios']},idx,total);
+
+  /* destino de cada ficha: [x, y] según el beat en que le toca moverse */
+  const DEST=[[130,322,1],[330,422,2],[690,322,1],[540,422,2]];
+
+  return function(beat){
+    on(cab,true);
+    on(vars,true);
+    chip.forEach((c,i)=>{
+      on(c.g,true);
+      const [dx,dy,b]=DEST[i];
+      c.at(beat>=b?dx:FILA[i], beat>=b?dy:250);
+    });
+    on(par,beat>=1);
+    on(flecha,beat>=1);
+    flecha.classList.toggle('dim',beat>=3);
+    on(medio,beat>=2);
+    on(doble,beat>=3);
+    setKw(beat);
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOTOR DEL MAZO — añade tus escenas a DEFS, en orden
+   ══════════════════════════════════════════════════════════════════════════ */
+const DEFS=[slideVariable,slideNumerica,slideDiscreta,slideContinua,slideCategorica,
+            slideNominal,slideOrdinal,slideClasificar,slidePapel];
+const BEATS=4;
+const slides=DEFS.map((fn,i)=>{
+  const svg=el('svg',{class:'scene',viewBox:'0 0 '+W+' '+H,preserveAspectRatio:'xMidYMid meet'},deck);
+  return {svg,render:fn(svg,i,DEFS.length),beat:0};
+});
+let cur=0;
+function show(i,beat){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.svg.classList.toggle('active',k===cur));
+  slides[cur].beat=beat===undefined?0:Math.max(0,Math.min(BEATS-1,beat));
+  slides[cur].render(slides[cur].beat);
+}
+function next(){
+  const s=slides[cur];
+  if(s.beat<BEATS-1){s.beat++;s.render(s.beat);}
+  else if(cur<slides.length-1) show(cur+1,0);
+}
+function back(){
+  const s=slides[cur];
+  if(s.beat>0){s.beat--;s.render(s.beat);}
+  else if(cur>0) show(cur-1,BEATS-1);
+}
+document.getElementById('next').onclick=e=>{e.stopPropagation();next();};
+document.getElementById('prev').onclick=e=>{e.stopPropagation();back();};
+document.getElementById('replay').onclick=e=>{e.stopPropagation();show(cur,0);};
+deck.onclick=next;
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();back();}
+  else if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();show(cur+1,0);}
+  else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();show(cur-1,0);}
+  else if(e.key==='r'||e.key==='R'){show(cur,0);}
+  else if(/^[1-9]$/.test(e.key)&&+e.key<=slides.length) show(+e.key-1,0);
+});
+let uiT;
+const showUI=()=>{document.body.classList.add('show-ui');clearTimeout(uiT);
+  uiT=setTimeout(()=>document.body.classList.remove('show-ui'),2600);};
+addEventListener('pointermove',showUI); addEventListener('focusin',showUI);
+
+/* #escena,beat — permite enlazar a un punto concreto y lo usa scripts/capturar.ps1 */
+function desdeHash(){
+  const m=/^#(\d+),(\d+)$/.exec(location.hash);
+  if(m) show(+m[1],+m[2]); else show(0,0);
+}
+addEventListener('hashchange',desdeHash);
+desdeHash();
+</script>
+</body>
+</html>

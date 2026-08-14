@@ -275,6 +275,154 @@
   @media (prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
   }
+
+  /* ---- identificación: sin nombre completo el ejercicio no arranca ---- */
+  .campo{margin:0 0 24px;max-width:430px}
+  .campo label{
+    display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--acento);margin:0 0 9px;
+  }
+  .campo input{
+    width:100%;font-family:var(--sans);font-size:15.5px;font-weight:600;color:var(--tinta);
+    background:var(--panel);border:1px solid var(--linea-2);border-radius:8px;padding:13px 15px;
+    transition:border-color .16s ease,box-shadow .16s ease;
+  }
+  .campo input::placeholder{color:var(--linea-2);font-weight:400;letter-spacing:0}
+  .campo input:focus{outline:none;border-color:var(--acento);box-shadow:0 0 0 3px rgba(76,224,192,.14)}
+  .campo input.error{border-color:var(--mal);box-shadow:0 0 0 3px rgba(255,107,107,.14)}
+  .campo .aviso{
+    font-family:var(--mono);font-size:11.5px;line-height:1.5;color:var(--mal);
+    margin:9px 0 0;min-height:18px;
+  }
+  .campo .aviso:empty{min-height:18px}
+
+  /* ---- certificado ---- */
+  .velo{
+    position:fixed;inset:0;z-index:200;background:rgba(6,9,14,.88);
+    -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
+    display:flex;padding:clamp(16px,4vh,40px) 20px;overflow:auto;
+  }
+  .velo[hidden]{display:none}
+  /* margin:auto centra sin recortar por arriba cuando el certificado no cabe */
+  .cert-caja{width:100%;max-width:660px;margin:auto;display:flex;flex-direction:column;gap:16px}
+  .certificado{
+    background:#fff;color:#0F1720;padding:clamp(28px,4.4vw,50px);
+    border-radius:3px;box-shadow:0 30px 80px -30px rgba(0,0,0,.9);
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  .cert-marco{border:1px solid #C9D3DE;padding:clamp(24px,3.6vw,40px);position:relative;
+    display:flex;flex-direction:column}
+  .cert-marco::before{
+    content:"";position:absolute;inset:5px;border:1px solid #E6ECF2;pointer-events:none;
+  }
+  .cert-cab{
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;
+    padding-bottom:14px;border-bottom:1px solid #DBE2EA;
+  }
+  .cert-marca{
+    margin:0;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.28em;
+    text-transform:uppercase;color:#0E9E86;
+  }
+  .cert-nivel{
+    margin:0;font-family:var(--mono);font-size:10px;letter-spacing:.2em;
+    text-transform:uppercase;color:#6B7789;
+  }
+  .cert-tipo{
+    margin:clamp(22px,3.4vh,34px) 0 0;text-align:center;
+    font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.32em;
+    text-transform:uppercase;color:#6B7789;
+  }
+  .cert-preludio{
+    margin:clamp(18px,2.6vh,26px) 0 0;text-align:center;
+    font-size:13.5px;line-height:1.6;color:#6B7789;
+  }
+  .cert-nombre{
+    margin:10px auto 0;text-align:center;max-width:22ch;
+    font-size:clamp(25px,4.2vw,38px);font-weight:600;letter-spacing:-.025em;line-height:1.15;
+    color:#0F1720;padding-bottom:12px;border-bottom:1px solid #C9D3DE;
+  }
+  .cert-actividad{
+    margin:10px 0 0;text-align:center;
+    font-size:clamp(17px,2.4vw,21px);font-weight:600;letter-spacing:-.015em;line-height:1.3;color:#0F1720;
+  }
+  .cert-actividad small{
+    display:block;margin-top:6px;font-family:var(--mono);font-size:10.5px;font-weight:500;
+    letter-spacing:.2em;text-transform:uppercase;color:#6B7789;
+  }
+  .cert-datos{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:clamp(24px,3.6vh,36px) 0 0;
+    border:1px solid #DBE2EA;
+  }
+  .cert-datos > div{padding:13px 16px;text-align:center;border-left:1px solid #DBE2EA}
+  .cert-datos > div:first-child{border-left:0}
+  .cert-datos dt{
+    font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.2em;
+    text-transform:uppercase;color:#6B7789;margin:0 0 6px;
+  }
+  .cert-datos dd{
+    margin:0;font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:-.01em;
+    color:#0F1720;font-variant-numeric:tabular-nums;
+  }
+  .cert-pie{
+    display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;
+    margin:clamp(28px,4.4vh,44px) 0 0;
+  }
+  .cert-firma{display:flex;flex-direction:column;min-width:230px}
+  .cert-rubrica{display:block;width:200px;height:1px;background:#0F1720;margin-bottom:9px}
+  .cert-firma b{font-size:14.5px;font-weight:600;letter-spacing:-.01em;color:#0F1720}
+  .cert-firma span:last-child{
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:#6B7789;margin-top:4px;
+  }
+  .cert-folio{
+    margin:0;font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:#6B7789;
+  }
+  .cert-folio b{color:#0F1720;font-weight:700;letter-spacing:.1em}
+  .cert-acciones{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+  /* ---- impresión: solo el certificado, en A4 vertical ----
+     Vertical a propósito: con "landscape" el navegador maqueta apaisado y, si el
+     diálogo tiene el papel en vertical, lo imprime girado 90°. Los tamaños van en
+     puntos porque clamp() con unidades de viewport no es fiable al imprimir. */
+  @media print{
+    @page{size:A4 portrait;margin:13mm}
+    html,body{background:#fff !important;min-height:0;margin:0}
+    body::before,body::after{display:none !important}
+    .hoja{display:none !important}
+    .velo{
+      position:static;inset:auto;display:block;padding:0;overflow:visible;
+      background:none !important;-webkit-backdrop-filter:none;backdrop-filter:none;
+    }
+    .velo[hidden]{display:none !important}
+    .cert-caja{max-width:none;margin:0;gap:0}
+    .cert-acciones{display:none !important}
+    .certificado{box-shadow:none;border-radius:0;padding:0}
+
+    /* el marco ocupa la hoja entera para que no quede medio folio en blanco */
+    .cert-marco{min-height:264mm;padding:14mm 13mm;page-break-inside:avoid}
+    .cert-cab{padding-bottom:5mm}
+    .cert-marca{font-size:9.5pt}
+    .cert-nivel{font-size:8pt}
+    /* dos margenes auto: la holgura de la hoja se reparte arriba y abajo del
+       bloque central, en vez de amontonarse encima de la firma */
+    .cert-tipo{font-size:10pt;margin-top:auto}
+    .cert-preludio{font-size:11pt;margin-top:11mm}
+    .cert-nombre{font-size:25pt;margin-top:5mm;padding-bottom:5mm;max-width:none}
+    .cert-actividad{font-size:15pt;margin-top:5mm}
+    .cert-actividad small{font-size:8.5pt;margin-top:2.5mm}
+    .cert-datos{margin-top:16mm;margin-bottom:auto}
+    .cert-datos > div{padding:5mm 4mm}
+    .cert-datos dt{font-size:7.5pt;margin-bottom:2mm}
+    .cert-datos dd{font-size:14pt}
+    /* margin-top:auto empuja la firma al pie de la hoja */
+    .cert-pie{margin-top:0;padding-top:0}
+    .cert-firma{min-width:0}
+    .cert-rubrica{width:62mm;margin-bottom:3mm}
+    .cert-firma b{font-size:11.5pt}
+    .cert-firma span:last-child{font-size:7.5pt;margin-top:1.5mm}
+    .cert-folio{font-size:7.5pt}
+  }
 </style>
 </head>
 <body>
@@ -296,6 +444,13 @@
     <p class="portada-k">Ejercicio listo</p>
     <h2 id="portada-h2"></h2>
     <ul class="reglas" id="reglas"></ul>
+    <div class="campo">
+      <label for="nombre">Nombre completo del participante</label>
+      <input id="nombre" type="text" autocomplete="name" spellcheck="false"
+             placeholder="Nombres y apellidos" maxlength="70">
+      <p class="aviso" id="aviso-nombre" aria-live="polite"></p>
+    </div>
+
     <button id="btn-inicio">Inicio</button>
   </section>
 
@@ -312,6 +467,7 @@
       <div class="controles">
         <button id="btn-revisar" disabled>Revisar</button>
         <button id="btn-reiniciar" class="secundario">Nueva ronda</button>
+        <button id="btn-certificado" class="secundario" hidden>Certificado</button>
       </div>
       <ul class="leyenda" id="leyenda" hidden>
         <li class="bien"><i>✓</i><span id="ley-bien"></span></li>
@@ -324,6 +480,42 @@
 
   <p class="pie"><span id="pie-izq"></span><span id="pie-ronda">Ronda 01</span></p>
 
+</div>
+
+
+<div class="velo" id="velo-cert" hidden role="dialog" aria-modal="true" aria-labelledby="cert-tipo">
+  <div class="cert-caja">
+    <div class="certificado">
+      <div class="cert-marco">
+        <div class="cert-cab">
+          <p class="cert-marca">Trabajo Científico</p>
+          <p class="cert-nivel" id="cert-nivel"></p>
+        </div>
+        <p class="cert-tipo" id="cert-tipo">Certificado de realización</p>
+        <p class="cert-preludio">Se certifica que</p>
+        <p class="cert-nombre" id="cert-nombre"></p>
+        <p class="cert-preludio">completó satisfactoriamente la actividad</p>
+        <p class="cert-actividad" id="cert-actividad"></p>
+        <dl class="cert-datos">
+          <div><dt>Tiempo empleado</dt><dd id="cert-tiempo"></dd></div>
+          <div><dt>Intentos</dt><dd id="cert-intentos"></dd></div>
+          <div><dt>Fecha</dt><dd id="cert-fecha"></dd></div>
+        </dl>
+        <div class="cert-pie">
+          <div class="cert-firma">
+            <span class="cert-rubrica"></span>
+            <b>Oscar Iván Vargas Pineda</b>
+            <span>Docente · Trabajo Científico</span>
+          </div>
+          <p class="cert-folio">Folio <b id="cert-folio"></b></p>
+        </div>
+      </div>
+    </div>
+    <div class="cert-acciones">
+      <button id="btn-pdf">Descargar PDF</button>
+      <button id="btn-cerrar-cert" class="secundario">Volver al ejercicio</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -759,6 +951,7 @@ function revelar(){
   pararReloj();
   elTiempo.classList.add("pleno");
   document.body.classList.add("resuelto");
+  certificar();
   const marcas = Array.prototype.map.call(document.querySelectorAll(".ranura .marca"), m => m.outerHTML);
   dibujar();
   document.querySelectorAll(".ranura").forEach((r, i) => {
@@ -772,9 +965,116 @@ function revelar(){
                      '. Cronómetro detenido. ' + TEXTOS.resueltoCola + '</span>';
 }
 
-document.getElementById("btn-inicio").addEventListener("click", comenzar);
+document.getElementById("btn-inicio").addEventListener("click", () => { if(exigirNombre()) comenzar(); });
 document.getElementById("btn-reiniciar").addEventListener("click", prepararRonda);
 prepararRonda();
+
+/* ---------- identificación del participante y certificado ----------
+   Sin nombre completo el ejercicio no arranca. Al resolver se emite un
+   certificado imprimible: "Descargar PDF" abre el diálogo del navegador,
+   donde se elige "Guardar como PDF". */
+const CLAVE_NOMBRE = "tc-participante";
+const campoNombre  = document.getElementById("nombre");
+const avisoNombre  = document.getElementById("aviso-nombre");
+const veloCert     = document.getElementById("velo-cert");
+const btnCert      = document.getElementById("btn-certificado");
+let participante = "";
+
+try{
+  const guardado = sessionStorage.getItem(CLAVE_NOMBRE);
+  if(guardado){ campoNombre.value = guardado; participante = guardado; }
+}catch(e){}
+
+/* dos palabras de dos letras o más, solo letras y los signos propios de un nombre */
+function nombreValido(v){
+  if(!/^[\p{L}\p{M}'’.\- ]+$/u.test(v)) return false;
+  return v.split(" ").filter(p => p.replace(/[^\p{L}]/gu,"").length >= 2).length >= 2;
+}
+
+function exigirNombre(){
+  const v = campoNombre.value.replace(/\s+/g," ").trim();
+  if(!nombreValido(v)){
+    campoNombre.classList.add("error");
+    avisoNombre.textContent = v
+      ? "Escribe nombre y apellido, tal como quieres que salgan en el certificado."
+      : "Necesitas escribir tu nombre completo para empezar.";
+    campoNombre.focus();
+    return false;
+  }
+  participante = v;
+  campoNombre.value = v;
+  campoNombre.classList.remove("error");
+  avisoNombre.textContent = "";
+  try{ sessionStorage.setItem(CLAVE_NOMBRE, v); }catch(e){}
+  return true;
+}
+
+campoNombre.addEventListener("input", () => {
+  campoNombre.classList.remove("error");
+  avisoNombre.textContent = "";
+});
+campoNombre.addEventListener("keydown", e => {
+  if(e.key === "Enter"){ e.preventDefault(); document.getElementById("btn-inicio").click(); }
+});
+
+/* ---------- emisión del certificado ---------- */
+function nivelDeRuta(){
+  const m = /profundizacion-(\d)/i.exec(location.pathname);
+  const romano = {"1":"I","2":"II","3":"III"};
+  return m ? "Profundización " + (romano[m[1]] || m[1]) : "Trabajo Científico";
+}
+
+/* folio corto y reproducible: mismos datos, mismo código */
+function folio(txt){
+  let h = 2166136261;
+  for(let i=0;i<txt.length;i++){ h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36).toUpperCase().padStart(7,"0").slice(-7);
+}
+
+function certificar(){
+  const partes = document.title.split("—");
+  const nombreAct = partes[0].trim();
+  const refAct    = partes.length > 1 ? partes.slice(1).join("—").trim() : "";
+  const tiempo    = formato(transcurrido);
+  const fecha     = new Date();
+
+  document.getElementById("cert-nivel").textContent    = nivelDeRuta();
+  document.getElementById("cert-nombre").textContent   = participante;
+  document.getElementById("cert-actividad").innerHTML  =
+    "" + nombreAct.replace(/[<>&]/g,"") + (refAct ? '<small>' + refAct.replace(/[<>&]/g,"") + '</small>' : "");
+  document.getElementById("cert-tiempo").textContent   = tiempo;
+  document.getElementById("cert-intentos").textContent = String(intentos);
+  document.getElementById("cert-fecha").textContent    =
+    fecha.toLocaleDateString("es-CO", {day:"2-digit", month:"2-digit", year:"numeric"});
+  document.getElementById("cert-folio").textContent    =
+    folio(participante + "|" + document.title + "|" + tiempo + "|" + fecha.toDateString());
+
+  btnCert.hidden = false;
+  setTimeout(abrirCertificado, 900);   /* deja ver las marcas ✓ antes de tapar */
+}
+
+function abrirCertificado(){
+  veloCert.hidden = false;
+  document.getElementById("btn-pdf").focus();
+}
+function cerrarCertificado(){
+  veloCert.hidden = true;
+  btnCert.focus();
+}
+
+document.getElementById("btn-pdf").addEventListener("click", () => window.print());
+document.getElementById("btn-cerrar-cert").addEventListener("click", cerrarCertificado);
+btnCert.addEventListener("click", abrirCertificado);
+veloCert.addEventListener("click", e => { if(e.target === veloCert) cerrarCertificado(); });
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && !veloCert.hidden) cerrarCertificado();
+});
+
+/* una ronda nueva retira el certificado de la anterior */
+document.getElementById("btn-reiniciar").addEventListener("click", () => {
+  veloCert.hidden = true;
+  btnCert.hidden = true;
+});
 </script>
 </body>
 </html>

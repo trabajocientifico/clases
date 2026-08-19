@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fase lógica de un proyecto de investigación · Explicación y generador de prompts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117; --bg2:#121a26; --ink:#eef2f7; --muted:#8b97a8;
+  --accent:#ff6b3d; --accent2:#3dd6c4; --gold:#e8b04b; --rojo:#ff5d7a;
+  --line:rgba(255,255,255,.1); --card:rgba(255,255,255,.04);
+  --code-bg:#0a0e14; --code-ink:#cdd6e3;
+  --mesh-a:rgba(255,107,61,.16); --mesh-b:rgba(61,214,196,.13); --mesh-c:rgba(232,176,75,.06);
+  --grain-op:.05; --grid-op:.4;
+}
+:root[data-theme="light"]{
+  --bg:#f7f4ee; --bg2:#ece8df; --ink:#1a1f29; --muted:#5a6878;
+  --accent:#d4501c; --accent2:#0e8a7c; --gold:#b8842e; --rojo:#c8324f;
+  --line:rgba(0,0,0,.12); --card:rgba(0,0,0,.03);
+  --code-bg:#1a1f29; --code-ink:#cdd6e3;
+  --mesh-a:rgba(212,80,28,.10); --mesh-b:rgba(14,138,124,.08); --mesh-c:rgba(184,132,46,.06);
+  --grain-op:.035; --grid-op:.5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'Sora',sans-serif; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color .35s ease, color .35s ease;
+}
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(60vw 60vw at 78% 12%, var(--mesh-a), transparent 60%),
+    radial-gradient(50vw 50vw at 12% 88%, var(--mesh-b), transparent 60%),
+    radial-gradient(40vw 40vw at 50% 50%, var(--mesh-c), transparent 70%);
+  animation:meshfloat 18s ease-in-out infinite alternate;}
+@keyframes meshfloat{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(-2%,2%,0) scale(1.08)}}
+.bg-grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:var(--grain-op);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--grid-op);
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;mask-image:radial-gradient(circle at 50% 50%,#000 30%,transparent 80%);}
+
+.deck{position:relative;z-index:2;height:100vh;width:100vw}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;
+  padding:4.5vh 5vw 8vh;opacity:0;transition:opacity .4s ease}
+.slide.active{display:flex;opacity:1}
+.slide.active .reveal{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+.reveal:nth-child(1){animation-delay:.04s}.reveal:nth-child(2){animation-delay:.12s}
+.reveal:nth-child(3){animation-delay:.2s}.reveal:nth-child(4){animation-delay:.28s}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+.kicker{font-family:'Space Mono',monospace;font-size:.78rem;letter-spacing:.32em;
+  text-transform:uppercase;color:var(--accent2);margin-bottom:1.2rem;display:flex;gap:.8rem;align-items:center}
+.kicker::before{content:"";width:34px;height:1px;background:var(--accent2)}
+h1{font-family:'Fraunces',serif;font-weight:900;line-height:.98;letter-spacing:-.02em;
+  font-size:clamp(2.4rem,5.4vw,4.8rem)}
+h2{font-family:'Fraunces',serif;font-weight:600;line-height:1.04;
+  font-size:clamp(1.6rem,3.2vw,2.6rem);letter-spacing:-.01em}
+.lead{font-size:clamp(1.02rem,1.4vw,1.22rem);color:var(--muted);max-width:60ch;line-height:1.6;font-weight:300}
+.em{color:var(--accent)}.em2{color:var(--accent2)}
+
+.spread{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.4rem;min-height:0}
+
+/* topbar / hud */
+.topbar{position:fixed;top:0;left:0;right:0;height:4px;z-index:30;background:rgba(127,127,127,.15)}
+.topbar .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .4s}
+.hud{position:fixed;bottom:1.6vh;left:5vw;right:5vw;z-index:30;display:flex;justify-content:space-between;align-items:center;
+  font-family:'Space Mono',monospace;font-size:.72rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.nav{display:flex;gap:.5rem;align-items:center}
+.nav button{background:var(--card);border:1px solid var(--line);color:var(--ink);width:36px;height:36px;border-radius:50%;
+  cursor:pointer;font-size:1rem;transition:.2s;display:grid;place-items:center}
+.nav button:hover{background:var(--accent);border-color:var(--accent);color:#1a0d08;transform:translateY(-2px)}
+.brand{font-family:'Fraunces',serif;font-style:italic;font-weight:600;color:var(--ink)}
+.dots{position:fixed;right:1.5vw;top:50%;transform:translateY(-50%);z-index:30;display:flex;flex-direction:column;gap:.4rem;max-height:88vh;overflow:hidden}
+.dots i{width:7px;height:7px;border-radius:50%;background:rgba(127,127,127,.3);cursor:pointer;transition:.25s;display:block}
+.dots i.on{background:var(--accent);height:18px;border-radius:5px}
+.dots i.tool{background:rgba(127,127,127,.55);border-radius:2px;width:7px;height:7px}
+.dots i.tool.on{background:var(--accent)}
+
+/* portada */
+.hero-num{position:absolute;right:5vw;top:7vh;font-family:'Fraunces',serif;font-weight:900;
+  font-size:22vw;line-height:.8;color:var(--line);z-index:-1;pointer-events:none}
+.meta-row{display:flex;gap:2.4rem;flex-wrap:wrap;margin-top:1.8rem}
+.meta-row div .mono{font-family:'Space Mono',monospace;color:var(--accent2);font-size:.72rem;letter-spacing:.2em}
+.meta-row div p{font-size:1.05rem;margin-top:.2rem}
+
+/* TOC */
+.toc-grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-auto-rows:minmax(0,1fr);gap:.9rem;margin-top:1rem}
+.toc-card{display:flex;flex-direction:column;justify-content:center;gap:.4rem;text-decoration:none;color:var(--ink);
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.1rem 1.2rem;
+  cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+.toc-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c,var(--accent));transition:.2s}
+.toc-card:hover{transform:translateY(-3px);border-color:var(--c,var(--accent))}
+.toc-card:hover::before{width:6px}
+.toc-card .t-num{font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:.2em;
+  color:var(--c,var(--accent));text-transform:uppercase;font-weight:700}
+.toc-card .t-title{font-family:'Fraunces',serif;font-weight:600;
+  font-size:clamp(1.1rem,1.45vw,1.45rem);line-height:1.2}
+.toc-card .t-desc{font-size:clamp(.9rem,1vw,1.05rem);line-height:1.5;color:var(--ink);opacity:.85}
+.toc-card .t-count{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted);
+  letter-spacing:.1em;text-transform:uppercase}
+.toc-card .t-go{margin-top:.6rem;font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--c,var(--accent));display:flex;align-items:center;gap:.4rem}
+.toc-card:hover .t-go .arr{transform:translateX(5px)}
+.toc-card .t-go .arr{transition:transform .2s}
+
+/* esquema animado de la cadena (última casilla del índice) */
+.toc-flow{border:1px dashed var(--line);border-radius:14px;background:rgba(127,127,127,.04);
+  padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:.7rem;overflow:hidden}
+.toc-flow .tf-k{font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted);font-weight:700}
+.tf-linea{position:relative;flex:1;display:flex;flex-direction:column;justify-content:space-between;
+  padding-left:1.5rem}
+.tf-linea::before{content:"";position:absolute;left:.42rem;top:.5rem;bottom:.5rem;width:2px;
+  background:linear-gradient(180deg,#ff6b3d,#e8b04b,#8a7dff,#36b3f0,#3ddc97)}
+.tf-linea::after{content:"";position:absolute;left:.1rem;width:.9rem;height:.9rem;border-radius:50%;
+  background:var(--ink);box-shadow:0 0 0 3px var(--bg);animation:tfdot 7s ease-in-out infinite}
+@keyframes tfdot{
+  0%,8%{top:.2rem} 20%,28%{top:calc(25% - .1rem)} 40%,48%{top:calc(50% - .35rem)}
+  60%,68%{top:calc(75% - .6rem)} 80%,100%{top:calc(100% - 1.1rem)}}
+.tf-linea span{font-family:'Fraunces',serif;font-size:clamp(.92rem,1.05vw,1.1rem);line-height:1.2;
+  color:var(--muted);animation:tfon 7s ease-in-out infinite}
+.tf-linea span:nth-child(1){animation-delay:0s}
+.tf-linea span:nth-child(2){animation-delay:1.4s}
+.tf-linea span:nth-child(3){animation-delay:2.8s}
+.tf-linea span:nth-child(4){animation-delay:4.2s}
+.tf-linea span:nth-child(5){animation-delay:5.6s}
+@keyframes tfon{0%,6%{color:var(--ink)}20%,100%{color:var(--muted)}}
+@media(prefers-reduced-motion:reduce){
+  .tf-linea::after,.tf-linea span{animation:none}
+  .tf-linea::after{top:.2rem}
+}
+
+/* ============================================================
+   DIAPOSITIVAS EXPLICATIVAS
+============================================================ */
+.teach .spread{justify-content:flex-start;gap:.6rem}
+.teach .kicker{margin-bottom:.1rem;color:var(--c,var(--accent2))}
+.teach .kicker::before{background:var(--c,var(--accent2))}
+.teach h2 .em{color:var(--c,var(--accent))}
+.teach .lead{font-size:clamp(.9rem,1.05vw,1rem);max-width:78ch}
+.dia{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:.7rem;padding:.2rem .4rem .2rem 0}
+.dia::-webkit-scrollbar{width:6px}
+.dia::-webkit-scrollbar-thumb{background:rgba(127,127,127,.3);border-radius:4px}
+
+/* Reparto del alto: solo crecen los bloques que SON el esquema (bandas apiladas
+   y listas de niveles). El resto conserva su altura natural y el conjunto se
+   centra con márgenes automáticos, que no recortan al desbordar. */
+.dia>.escalera{flex:1 1 auto;min-height:0}
+.dia>.banda{flex:1 1 auto;min-height:0;max-height:16vh}
+.dia>.flujo,.dia>.trio{flex:1 1 auto;min-height:0;max-height:46vh}
+.dia>.piezas{flex:1 1 auto;min-height:0;max-height:27vh}
+.dia>.duo,.dia>.frase,.dia>.banda.fija,
+.dia>.nota,.dia>.regla,.dia>.ej,.dia>.subir,.dia>.leyenda,.dia>.nodo{flex:0 0 auto}
+.dia>*:first-child{margin-top:auto}
+.dia>*:last-child{margin-bottom:auto}
+
+/* cadena de pasos */
+.flujo{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1.3rem;align-items:stretch}
+.flujo .paso{position:relative;height:100%;min-height:clamp(150px,25vh,240px);
+  background:var(--card);border:1px solid var(--line);
+  border-top:3px solid var(--pc,var(--c,var(--accent)));border-radius:10px;padding:.85rem .9rem;
+  display:flex;flex-direction:column;justify-content:center;gap:.45rem}
+.flujo .paso+.paso::before{content:"→";position:absolute;left:-1rem;top:50%;transform:translate(-50%,-50%);
+  color:var(--muted);font-size:1rem;line-height:1}
+.paso .pn{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted)}
+.paso .pt{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.1rem,1.5vw,1.45rem);
+  line-height:1.2;color:var(--pc,var(--c,var(--accent)))}
+.paso .pe{font-size:clamp(1rem,1.18vw,1.25rem);line-height:1.55;
+  border-top:1px dashed var(--line);padding-top:.6rem}
+
+/* bandas: etiqueta a la izquierda, contenido repartido a lo ancho */
+.banda{border:1px solid var(--line);border-left:4px solid var(--bc,var(--c,var(--accent)));
+  border-radius:10px;background:var(--card);padding:.7rem .95rem;
+  display:grid;grid-template-columns:minmax(130px,180px) minmax(0,1fr);
+  align-items:center;gap:.45rem 1.2rem}
+.banda .btit{font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--bc,var(--c,var(--accent)));font-weight:700;
+  display:flex;flex-direction:column;align-items:flex-start;gap:.3rem;line-height:1.4}
+.banda .bsub{font-family:'Sora',sans-serif;letter-spacing:0;text-transform:none;color:var(--muted);
+  font-weight:300;font-size:.8rem;line-height:1.4}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.5rem;align-items:stretch}
+.chip{display:flex;align-items:center;font-size:clamp(.9rem,1vw,1.05rem);line-height:1.4;
+  background:rgba(127,127,127,.09);border:1px solid var(--line);border-radius:8px;padding:.5rem .75rem}
+
+/* piezas: una idea descompuesta en partes, en el orden en que se leen */
+.piezas{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.7rem;align-items:stretch}
+.pieza{display:flex;flex-direction:column;justify-content:center;gap:.5rem;min-height:clamp(110px,14vh,160px);
+  border:1px solid var(--line);border-top:3px solid var(--pc,var(--c,var(--accent)));
+  border-radius:10px;background:var(--card);padding:.75rem .85rem}
+.pieza .pk{font-family:'Space Mono',monospace;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--pc,var(--c,var(--accent)));font-weight:700}
+.pieza .pv{font-size:clamp(.95rem,1.08vw,1.15rem);line-height:1.5}
+.piezas.armada .pieza .pv{font-family:'Fraunces',serif;font-weight:600}
+.nodo{font-family:'Fraunces',serif;font-size:clamp(1rem,1.6vw,1.3rem);font-weight:600;text-align:center;
+  padding:.8rem .9rem;border:2px solid var(--bc,var(--c,var(--accent)));border-radius:12px;
+  background:var(--card);line-height:1.3}
+.subir{display:flex;justify-content:center;gap:1.2rem;color:var(--muted);font-size:.85rem;line-height:1}
+
+/* dos columnas comparadas */
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.8rem;align-items:stretch}
+.caja{height:100%;min-height:clamp(140px,18vh,210px);
+  border:1px solid var(--line);border-radius:12px;padding:.9rem 1.05rem;background:var(--card);
+  display:flex;flex-direction:column;gap:.55rem}
+.caja .cabe{font-family:'Space Mono',monospace;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
+  display:flex;gap:.45rem;align-items:center}
+.caja.mal{border-color:rgba(255,93,122,.4)} .caja.mal .cabe{color:var(--rojo)}
+.caja.bien{border-color:var(--accent2)} .caja.bien .cabe{color:var(--accent2)}
+.caja p{font-size:clamp(.95rem,1.05vw,1.1rem);line-height:1.6}
+.caja .cita{font-family:'Fraunces',serif;font-size:clamp(1.05rem,1.25vw,1.25rem);line-height:1.5;font-style:italic}
+.caja .lista{display:flex;flex-direction:column;gap:.45rem;font-size:clamp(.95rem,1.05vw,1.1rem);line-height:1.5}
+
+/* trío de tarjetas */
+.trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem;align-items:stretch}
+.mini{height:100%;min-height:clamp(150px,24vh,230px);
+  border:1px solid var(--line);border-top:3px solid var(--pc,var(--c,var(--accent)));border-radius:10px;
+  background:var(--card);padding:.85rem .9rem;display:flex;flex-direction:column;justify-content:center;gap:.45rem}
+.mini .mt{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.1rem,1.4vw,1.35rem);
+  color:var(--pc,var(--c,var(--accent)))}
+.mini .me{font-size:clamp(1rem,1.15vw,1.2rem);line-height:1.6;
+  border-top:1px dashed var(--line);padding-top:.55rem}
+.mini .mm{font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.1em;color:var(--muted);
+  line-height:1.4}
+
+/* frase con sus componentes marcados */
+.frase{font-family:'Fraunces',serif;font-size:clamp(1.05rem,1.9vw,1.55rem);line-height:1.9;
+  border:1px solid var(--line);border-radius:12px;background:var(--card);padding:1.1rem 1.3rem}
+.frase mark{background:transparent;color:var(--ink);border-bottom:3px solid var(--m);padding-bottom:2px}
+.leyenda{display:flex;flex-wrap:wrap;gap:.45rem 1.2rem;font-family:'Space Mono',monospace;font-size:.64rem;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.leyenda span{display:flex;align-items:center;gap:.4rem}
+.leyenda span::before{content:"";width:11px;height:11px;border-radius:3px;background:var(--m)}
+
+/* lista de niveles */
+.escalera{display:flex;flex-direction:column;gap:.5rem;justify-content:space-between}
+.escalon{flex:1 1 0;display:flex;gap:.85rem;align-items:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);padding:.6rem .8rem;border-left:3px solid var(--pc,var(--c,var(--accent)))}
+.escalon .num{font-family:'Space Mono',monospace;font-size:.64rem;letter-spacing:.14em;font-weight:700;
+  color:var(--pc,var(--c,var(--accent)));min-width:2.8rem}
+.escalon .cuerpo{display:flex;flex-direction:column;gap:.22rem;min-width:0}
+.escalon .et{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.05rem,1.2vw,1.2rem);line-height:1.3}
+.escalon .ee{font-size:clamp(.95rem,1.02vw,1.08rem);line-height:1.55;color:var(--ink)}
+.escalon .emet{font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.1em;color:var(--muted)}
+
+/* caja de ejemplo y notas */
+.ej{border:1px dashed var(--line);border-radius:12px;padding:.7rem .9rem;background:rgba(127,127,127,.05)}
+.ej .etiq{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold);font-weight:700;display:block;margin-bottom:.35rem}
+.ej p{font-size:.92rem;line-height:1.55}
+.nota{font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.1em;color:var(--muted);line-height:1.6}
+.nota b{color:var(--c,var(--accent));font-weight:700}
+.regla{display:flex;gap:.7rem;align-items:center;border-left:3px solid var(--gold);
+  background:rgba(232,176,75,.07);border-radius:0 8px 8px 0;padding:.55rem .85rem;font-size:.9rem;line-height:1.5}
+.regla .rk{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold);font-weight:700;white-space:nowrap}
+
+/* tool slide */
+.ptop{display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
+  padding-bottom:.9rem;border-bottom:1px solid var(--line)}
+.ptop .sbadge{font-family:'Space Mono',monospace;font-size:.74rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--c,var(--accent));font-weight:700;
+  padding:.32rem .7rem;border:1px solid var(--c,var(--accent));border-radius:999px}
+.ptop .sname{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.05rem,1.7vw,1.4rem);color:var(--ink)}
+
+.tool-stack{flex:1;display:flex;flex-direction:column;gap:1rem;min-height:0}
+.tool-grid{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:1.1rem;min-height:0}
+
+.form-pane,.preview-pane{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  display:flex;flex-direction:column;min-height:0;overflow:hidden
+}
+.preview-pane{background:var(--code-bg);border-left:4px solid var(--c,var(--accent))}
+
+.pane-head{
+  padding:.7rem 1rem;border-bottom:1px solid var(--line);
+  font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted);font-weight:700;
+  display:flex;justify-content:space-between;align-items:center;gap:.5rem
+}
+.pane-head .pane-hint{color:var(--c,var(--accent2));font-size:.64rem;letter-spacing:.16em}
+
+.form-body{flex:1;overflow-y:auto;padding:.9rem 1rem;display:flex;flex-direction:column;gap:.85rem}
+.form-body::-webkit-scrollbar{width:6px}
+.form-body::-webkit-scrollbar-thumb{background:rgba(127,127,127,.3);border-radius:4px}
+
+.field-block{display:flex;flex-direction:column;gap:.3rem}
+.field-block label{font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--c,var(--accent));font-weight:700}
+.field-block textarea{
+  background:var(--code-bg);border:1px solid var(--line);border-radius:8px;
+  padding:.55rem .75rem;color:var(--code-ink);font-family:'Space Mono',monospace;
+  font-size:.86rem;line-height:1.5;resize:vertical;min-height:2.2rem;width:100%;
+  transition:border-color .2s
+}
+.field-block textarea:focus{outline:none;border-color:var(--c,var(--accent));box-shadow:0 0 0 2px rgba(255,107,61,.12)}
+.field-block textarea::placeholder{color:rgba(127,127,127,.6);font-style:italic}
+
+.form-actions{padding:.75rem 1rem;border-top:1px solid var(--line);display:flex;gap:.5rem;justify-content:flex-end}
+.btn{
+  background:transparent;border:1px solid var(--line);color:var(--ink);
+  font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:.12em;
+  padding:.45rem .85rem;border-radius:999px;cursor:pointer;text-transform:uppercase;
+  font-weight:700;transition:.2s
+}
+.btn:hover{border-color:var(--c,var(--accent));color:var(--c,var(--accent))}
+.btn.primary{background:var(--c,var(--accent));color:#0a0e14;border-color:var(--c,var(--accent))}
+.btn.primary:hover{filter:brightness(1.08);color:#0a0e14;transform:translateY(-1px)}
+.btn.ok{background:var(--accent2);color:#0a0e14;border-color:var(--accent2)}
+
+.preview-body{flex:1;overflow-y:auto;padding:1.1rem 1.3rem;
+  font-family:'Space Mono',monospace;font-size:clamp(.84rem,.96vw,.96rem);line-height:1.7;
+  color:var(--code-ink);white-space:pre-wrap;word-break:break-word}
+.preview-body::-webkit-scrollbar{width:6px}
+.preview-body::-webkit-scrollbar-thumb{background:rgba(127,127,127,.3);border-radius:4px}
+.preview-body .ph-empty{
+  color:var(--gold);background:rgba(232,176,75,.12);
+  padding:0 .25em;border-radius:4px;font-weight:700;
+  border:1px dashed rgba(232,176,75,.3)
+}
+.preview-body .ph-filled{
+  color:var(--accent2);background:rgba(61,214,196,.07);
+  padding:0 .15em;border-radius:3px
+}
+.preview-actions{padding:.75rem 1rem;border-top:1px solid var(--line);
+  display:flex;gap:.5rem;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.preview-actions .status{margin-right:auto;font-family:'Space Mono',monospace;
+  font-size:.66rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+
+.shared-badge{font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:.1em;
+  color:var(--accent2);background:rgba(61,214,196,.1);padding:.1rem .4rem;
+  border-radius:4px;text-transform:uppercase;font-weight:700;margin-left:.4rem}
+
+@media(max-width:980px){
+  .tool-grid{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
+  .dots{display:none}
+  .ptop{flex-direction:column;align-items:flex-start;gap:.4rem}
+  .flujo .paso+.paso::before{display:none}
+  .dia>.flujo,.dia>.trio{max-height:none}
+  .toc-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;overflow-y:auto}
+  .banda{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<a href="../index.html" class="back-home" title="Volver al mapa del curso"><span aria-hidden="true">&#x21A9;</span> Inicio</a>
+<style>.back-home{position:fixed;top:14px;left:14px;z-index:40;display:inline-flex;align-items:center;gap:.4rem;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none;font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;padding:.45rem .8rem;border-radius:999px;backdrop-filter:blur(6px);transition:.2s}.back-home:hover{background:var(--accent);border-color:var(--accent);color:#1a0d08}.back-home span{font-size:1rem;line-height:1}</style>
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+<div class="bg-grain"></div>
+<div class="topbar"><div class="fill" id="progress"></div></div>
+<div class="dots" id="dots"></div>
+
+<div class="deck" id="deck">
+
+<!-- 1 · PORTADA -->
+<section class="slide active">
+  <div class="hero-num">L</div>
+  <div class="spread" style="max-width:64%">
+    <div class="kicker reveal">Anteproyecto · del tema al papel</div>
+    <h1 class="reveal">La <span class="em">fase lógica</span> de un proyecto de investigación.</h1>
+    <p class="reveal" style="margin-top:1.8rem;font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase">→ Avanza con flechas · T tema · I índice · R limpiar todo</p>
+  </div>
+</section>
+
+<!-- 2 · ÍNDICE -->
+<section class="slide">
+  <div class="spread" style="justify-content:flex-start">
+    <div class="kicker reveal">Salto rápido</div>
+    <h2 class="reveal">Los siete <span class="em">módulos</span>.</h2>
+    <p class="reveal" style="color:var(--muted);font-size:.92rem;margin-top:.4rem;max-width:66ch">
+      Cada módulo parte del resultado del anterior. Haz clic en uno para abrir su explicación. Lo que escribas en los generadores se guarda en tu navegador.
+    </p>
+    <div class="toc-grid reveal" id="tocGrid"></div>
+  </div>
+</section>
+
+<!-- las diapositivas de módulo se insertan dinámicamente -->
+
+</div><!-- /deck -->
+
+<div class="hud">
+  <div class="brand">Trabajo Científico · Fase lógica</div>
+  <div class="nav">
+    <button id="themeToggle" aria-label="cambiar tema" title="Cambiar tema (T)"><span id="themeIcon">☾</span></button>
+    <button id="resetAll" aria-label="limpiar todo" title="Limpiar todos los campos (R)">⟳</button>
+    <button id="home" aria-label="índice" title="Ir al índice (I)">⌂</button>
+    <button id="prev" aria-label="anterior">‹</button>
+    <span id="counter" style="display:grid;place-items:center;min-width:74px">01 / NN</span>
+    <button id="next" aria-label="siguiente">›</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATOS · módulos (explicación) y prompts (generador)
+   Cada módulo declara sus diapositivas explicativas en `teach`
+   y sus prompts salen de PROMPTS filtrando por moduleId.
+   Las plantillas usan [clave] como marcador.
+   Claves iguales entre prompts se sincronizan automáticamente.
+============================================================ */
+
+const MODULOS = [
+
+/* ══════════ MÓDULO 01 · LÍNEA DE INVESTIGACIÓN ══════════ */
+{
+  id:'linea', num:'01', label:'Línea de investigación', color:'#ff6b3d',
+  desc:'Del tema general al problema investigable.',
+  teach:[
+    {
+      titulo:'Tema y <span class="em">problema</span>.',
+      html:`
+        <div class="duo">
+          <div class="caja mal">
+            <span class="cabe">✗ Tema</span>
+            <span class="cita">«Rendimiento en matemáticas en la educación rural.»</span>
+          </div>
+          <div class="caja bien">
+            <span class="cabe">✓ Problema</span>
+            <span class="cita">«Los estudiantes de 9.º grado de ocho colegios rurales de Boyacá no alcanzan los aprendizajes esperados en matemáticas, en un contexto de aulas multigrado y docentes sin formación en el área.»</span>
+          </div>
+        </div>
+        <div class="nota">Los cuatro componentes que convierten el tema de la izquierda en el problema de la derecha:</div>
+        <div class="piezas">
+          <div class="pieza" style="--pc:#ff6b3d">
+            <span class="pk">1 · Tensión</span>
+            <span class="pv">No alcanzan los aprendizajes esperados</span>
+          </div>
+          <div class="pieza" style="--pc:#e8b04b">
+            <span class="pk">2 · Delimitación</span>
+            <span class="pv">9.º grado · ocho colegios rurales de Boyacá</span>
+          </div>
+          <div class="pieza" style="--pc:#3dd6c4">
+            <span class="pk">3 · Evidencia</span>
+            <span class="pv">Resultados de las pruebas nacionales del área</span>
+          </div>
+          <div class="pieza" style="--pc:#8a7dff">
+            <span class="pk">4 · Relevancia</span>
+            <span class="pv">Estudiantes, docentes y secretaría de educación</span>
+          </div>
+        </div>`
+    }
+  ]
+},
+
+/* ══════════ MÓDULO 02 · ÁRBOL DE PROBLEMA ══════════ */
+{
+  id:'arbol', num:'02', label:'Árbol de problema', color:'#3dd6c4',
+  desc:'Causas y efectos del problema, en un solo mapa.',
+  teach:[
+    {
+      titulo:'Estructura del <span class="em">árbol de problema</span>.',
+      bajada:'Se construye de abajo hacia arriba: primero las causas, después el problema, al final los efectos.',
+      html:`
+        <div class="banda" style="--bc:#ff5d7a">
+          <span class="btit">Efectos <span class="bsub">consecuencias observables del problema</span></span>
+          <div class="chips">
+            <span class="chip">Efecto directo</span>
+            <span class="chip">Efecto directo</span>
+            <span class="chip">Efecto final</span>
+          </div>
+        </div>
+        <div class="subir"><span>↑</span><span>↑</span><span>↑</span></div>
+        <div class="nodo" style="--bc:#3dd6c4">Problema central<br><span style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:300;color:var(--muted)">una sola frase, en presente, sin solución dentro</span></div>
+        <div class="subir"><span>↑</span><span>↑</span><span>↑</span></div>
+        <div class="banda" style="--bc:#e8b04b">
+          <span class="btit">Causas intermedias <span class="bsub">lo que produce el problema de forma inmediata</span></span>
+          <div class="chips">
+            <span class="chip">Causa intermedia</span>
+            <span class="chip">Causa intermedia</span>
+            <span class="chip">Causa intermedia</span>
+          </div>
+        </div>
+        <div class="subir"><span>↑</span><span>↑</span><span>↑</span></div>
+        <div class="banda" style="--bc:#8a7dff">
+          <span class="btit">Causas raíz <span class="bsub">origen estructural: formación, recursos, normas</span></span>
+          <div class="chips">
+            <span class="chip">Causa raíz</span>
+            <span class="chip">Causa raíz</span>
+            <span class="chip">Causa raíz</span>
+          </div>
+        </div>
+        <div class="regla"><span class="rk">Verificación</span>
+          <span>Hacia arriba la lectura es «esto provoca que…»; hacia abajo, «esto ocurre porque…». Si no encaja, el elemento está en el nivel equivocado.</span>
+        </div>`
+    },
+    {
+      titulo:'Árbol de problema · <span class="em">ejemplo completo</span>.',
+      html:`
+        <div class="banda" style="--bc:#ff5d7a">
+          <span class="btit">Efectos</span>
+          <div class="chips">
+            <span class="chip">Reprobación en matemáticas al final del año</span>
+            <span class="chip">Deserción en 10.º y 11.º</span>
+            <span class="chip">Menor acceso a programas técnicos y universitarios</span>
+          </div>
+        </div>
+        <div class="subir"><span>↑</span><span>↑</span><span>↑</span></div>
+        <div class="nodo" style="--bc:#3dd6c4">Los estudiantes de 9.º grado de ocho colegios rurales de Boyacá no alcanzan los aprendizajes esperados en matemáticas.</div>
+        <div class="subir"><span>↑</span><span>↑</span><span>↑</span></div>
+        <div class="banda" style="--bc:#e8b04b">
+          <span class="btit">Causas intermedias</span>
+          <div class="chips">
+            <span class="chip">Clases centradas en explicación, sin práctica guiada</span>
+            <span class="chip">Evaluación solo al final del periodo</span>
+            <span class="chip">Ausentismo en época de cosecha</span>
+          </div>
+        </div>
+        <div class="subir"><span>↑</span><span>↑</span><span>↑</span></div>
+        <div class="banda" style="--bc:#8a7dff">
+          <span class="btit">Causas raíz</span>
+          <div class="chips">
+            <span class="chip">Docentes sin formación específica en el área</span>
+            <span class="chip">Un solo docente para varios grados</span>
+            <span class="chip">Sin conectividad ni material de práctica</span>
+            <span class="chip">Calendario escolar ajeno al ciclo agrícola</span>
+          </div>
+        </div>
+        <div class="nota">Ejemplo pedagógico: el contexto y los datos son ilustrativos.</div>`
+    }
+  ]
+},
+
+/* ══════════ MÓDULO 03 · PREGUNTAS ══════════ */
+{
+  id:'preguntas', num:'03', label:'Preguntas de investigación', color:'#e8b04b',
+  desc:'La pregunta que se responde con datos, no con opinión.',
+  teach:[
+    {
+      titulo:'Componentes de una <span class="em">pregunta</span> de investigación.',
+      html:`
+        <div class="frase">¿Qué <mark style="--m:#ff6b3d">efecto</mark> tiene la <mark style="--m:#3dd6c4">práctica guiada con retroalimentación semanal</mark> sobre el <mark style="--m:#e8b04b">desempeño en matemáticas</mark> de los <mark style="--m:#8a7dff">estudiantes de 9.º grado</mark> de <mark style="--m:#36b3f0">ocho colegios rurales de Boyacá</mark>, durante <mark style="--m:#3ddc97">un semestre académico</mark>?</div>
+        <div class="leyenda">
+          <span style="--m:#ff6b3d">Tipo de relación</span>
+          <span style="--m:#3dd6c4">Variable independiente</span>
+          <span style="--m:#e8b04b">Variable dependiente</span>
+          <span style="--m:#8a7dff">Población</span>
+          <span style="--m:#36b3f0">Contexto</span>
+          <span style="--m:#3ddc97">Periodo</span>
+        </div>
+        <div class="duo">
+          <div class="caja mal">
+            <span class="cabe">✗ No investigable</span>
+            <div class="lista">
+              <span>«¿Es importante la educación rural?»</span>
+              <span>«¿Debería el colegio enseñar más matemáticas?»</span>
+              <span>«¿Mejora la práctica guiada el aprendizaje?»</span>
+            </div>
+          </div>
+          <div class="caja bien">
+            <span class="cabe">✓ Investigable</span>
+            <div class="lista">
+              <span>Se responde con datos, no con una opinión.</span>
+              <span>Nombra qué se mide y en quién.</span>
+              <span>Otra persona puede repetir el estudio.</span>
+            </div>
+          </div>
+        </div>`
+    },
+    {
+      titulo:'Tres <span class="em">ángulos</span> de pregunta desde el mismo árbol.',
+      html:`
+        <div class="trio">
+          <div class="mini" style="--pc:#e8b04b">
+            <span class="mt">1 · Magnitud</span>
+            <span class="me">¿Cuál es el nivel de desempeño en matemáticas de los estudiantes de 9.º de ocho colegios rurales de Boyacá en 2026?</span>
+            <span class="mm">→ Descriptivo · prueba estandarizada</span>
+          </div>
+          <div class="mini" style="--pc:#8a7dff">
+            <span class="mt">2 · Relación</span>
+            <span class="me">¿Qué relación existe entre el ausentismo en época de cosecha y el desempeño en matemáticas de esos estudiantes?</span>
+            <span class="mm">→ Correlacional · registros de asistencia y notas</span>
+          </div>
+          <div class="mini" style="--pc:#3ddc97">
+            <span class="mt">3 · Intervención</span>
+            <span class="me">¿Qué efecto tiene la práctica guiada con retroalimentación semanal sobre el desempeño en matemáticas de esos estudiantes durante un semestre?</span>
+            <span class="mm">→ Cuasiexperimento · grupo control, pretest y postest</span>
+          </div>
+        </div>
+        <div class="regla"><span class="rk">Criterio</span>
+          <span>Se elige por viabilidad: acceso a los datos, a la población y al tiempo disponible.</span>
+        </div>`
+    }
+  ]
+},
+
+/* ══════════ MÓDULO 04 · OBJETIVO GENERAL ══════════ */
+{
+  id:'general', num:'04', label:'Objetivo general', color:'#8a7dff',
+  desc:'El compromiso central del estudio, con verbo medible.',
+  teach:[
+    {
+      titulo:'De la pregunta al <span class="em">objetivo general</span>.',
+      html:`
+        <div class="duo">
+          <div class="caja" style="border-color:#e8b04b">
+            <span class="cabe" style="color:#e8b04b">Pregunta</span>
+            <span class="cita">¿Qué efecto tiene la práctica guiada con retroalimentación semanal sobre el desempeño en matemáticas de los estudiantes de 9.º de ocho colegios rurales de Boyacá?</span>
+          </div>
+          <div class="caja" style="border-color:#8a7dff">
+            <span class="cabe" style="color:#8a7dff">Objetivo general</span>
+            <span class="cita">Determinar el efecto de la práctica guiada con retroalimentación semanal sobre el desempeño en matemáticas de los estudiantes de 9.º de ocho colegios rurales de Boyacá durante el primer semestre de 2026.</span>
+          </div>
+        </div>
+        <div class="nota">Ese objetivo, desarmado en sus cinco piezas. Leídas en orden, lo reconstruyen:</div>
+        <div class="piezas armada">
+          <div class="pieza" style="--pc:#8a7dff">
+            <span class="pk">1 · Verbo medible</span>
+            <span class="pv">Determinar</span>
+          </div>
+          <div class="pieza" style="--pc:#8a7dff">
+            <span class="pk">2 · Qué</span>
+            <span class="pv">el efecto de la práctica guiada con retroalimentación semanal</span>
+          </div>
+          <div class="pieza" style="--pc:#8a7dff">
+            <span class="pk">3 · Sobre qué</span>
+            <span class="pv">sobre el desempeño en matemáticas</span>
+          </div>
+          <div class="pieza" style="--pc:#8a7dff">
+            <span class="pk">4 · En quién y dónde</span>
+            <span class="pv">de los estudiantes de 9.º de ocho colegios rurales de Boyacá</span>
+          </div>
+          <div class="pieza" style="--pc:#8a7dff">
+            <span class="pk">5 · Cuándo</span>
+            <span class="pv">durante el primer semestre de 2026</span>
+          </div>
+        </div>
+        <div class="duo">
+          <div class="caja mal">
+            <span class="cabe">✗ Verbos no evaluables</span>
+            <p>conocer · entender · reflexionar sobre · concientizar · profundizar en · sensibilizar</p>
+          </div>
+          <div class="caja bien">
+            <span class="cabe">✓ Verbos con resultado verificable</span>
+            <p>caracterizar · cuantificar · comparar · determinar · evaluar · diseñar · validar · modelar</p>
+          </div>
+        </div>`
+    },
+    {
+      titulo:'Cuatro <span class="em">tipos</span> de objetivo general.',
+      html:`
+        <div class="escalera">
+          <div class="escalon" style="--pc:#3dd6c4">
+            <span class="num">01</span>
+            <span class="cuerpo">
+              <span class="et">Descriptivo · caracterizar, cuantificar</span>
+              <span class="ee">Caracterizar el nivel de desempeño en matemáticas de los estudiantes de 9.º de ocho colegios rurales de Boyacá.</span>
+              <span class="emet">→ Encuesta, prueba estandarizada, análisis documental</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#e8b04b">
+            <span class="num">02</span>
+            <span class="cuerpo">
+              <span class="et">Comparativo · comparar, contrastar</span>
+              <span class="ee">Comparar el desempeño en matemáticas entre colegios con y sin acompañamiento docente en el área.</span>
+              <span class="emet">→ Dos o más grupos con la misma medición</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#8a7dff">
+            <span class="num">03</span>
+            <span class="cuerpo">
+              <span class="et">Explicativo · determinar, analizar la relación</span>
+              <span class="ee">Determinar la relación entre el ausentismo en época de cosecha y el desempeño en matemáticas.</span>
+              <span class="emet">→ Correlación, regresión, análisis causal</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#3ddc97">
+            <span class="num">04</span>
+            <span class="cuerpo">
+              <span class="et">Aplicado · evaluar, diseñar, proponer</span>
+              <span class="ee">Evaluar el efecto de una estrategia de práctica guiada sobre el desempeño en matemáticas.</span>
+              <span class="emet">→ Intervención, prototipo, validación</span>
+            </span>
+          </div>
+        </div>
+        <div class="regla"><span class="rk">Regla</span>
+          <span>Un solo objetivo general y un solo verbo: dos verbos unidos por «y» son dos investigaciones.</span>
+        </div>`
+    }
+  ]
+},
+
+/* ══════════ MÓDULO 05 · OBJETIVOS ESPECÍFICOS ══════════ */
+{
+  id:'especificos', num:'05', label:'Objetivos específicos', color:'#36b3f0',
+  desc:'Los tramos que, cumplidos, cumplen el general.',
+  teach:[
+    {
+      titulo:'Del general a los <span class="em">objetivos específicos</span>.',
+      html:`
+        <div class="nodo" style="--bc:#8a7dff">Objetivo general</div>
+        <div class="subir"><span>↓</span><span>↓</span><span>↓</span></div>
+        <div class="trio">
+          <div class="mini" style="--pc:#36b3f0">
+            <span class="mt">OE 1 · Diagnóstico</span>
+            <span class="me">identificar · caracterizar · cuantificar</span>
+            <span class="mm">→ Línea base</span>
+          </div>
+          <div class="mini" style="--pc:#36b3f0">
+            <span class="mt">OE 2 · Análisis</span>
+            <span class="me">analizar · comparar · relacionar</span>
+            <span class="mm">→ Cruce de los datos levantados</span>
+          </div>
+          <div class="mini" style="--pc:#36b3f0">
+            <span class="mt">OE 3 · Cierre</span>
+            <span class="me">proponer · evaluar · validar</span>
+            <span class="mm">→ Producto final del estudio</span>
+          </div>
+        </div>
+        <div class="banda fija" style="--bc:#36b3f0">
+          <span class="btit">Condiciones que debe cumplir el conjunto</span>
+          <div class="chips">
+            <span class="chip"><b>Suficiencia</b> · cumplidos los tres, se cumple el general</span>
+            <span class="chip"><b>No exceso</b> · ninguno va más allá del general</span>
+            <span class="chip"><b>Secuencia</b> · el 2 usa el resultado del 1; el 3, el del 2</span>
+          </div>
+        </div>
+        <div class="duo">
+          <div class="caja mal">
+            <span class="cabe">✗ Actividad</span>
+            <p>«Aplicar encuestas a los estudiantes» · «Revisar la literatura» · «Tabular los datos»</p>
+          </div>
+          <div class="caja bien">
+            <span class="cabe">✓ Objetivo específico</span>
+            <p>«Caracterizar el nivel de desempeño…» · «Comparar el desempeño entre…»</p>
+          </div>
+        </div>`
+    },
+    {
+      titulo:'Paquete de específicos · <span class="em">ejemplo completo</span>.',
+      html:`
+        <div class="ej">
+          <span class="etiq">Objetivo general</span>
+          <p>Evaluar el efecto de una estrategia de práctica guiada con retroalimentación semanal sobre el desempeño en matemáticas de los estudiantes de 9.º de ocho colegios rurales de Boyacá durante el primer semestre de 2026.</p>
+        </div>
+        <div class="escalera">
+          <div class="escalon" style="--pc:#3dd6c4">
+            <span class="num">OE 1</span>
+            <span class="cuerpo">
+              <span class="et">Caracterizar el nivel de desempeño en matemáticas de los estudiantes antes de la intervención.</span>
+              <span class="emet">→ Prueba diagnóstica a toda la muestra · Producto: línea base por institución</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#e8b04b">
+            <span class="num">OE 2</span>
+            <span class="cuerpo">
+              <span class="et">Implementar la estrategia de práctica guiada en los grupos seleccionados durante un semestre.</span>
+              <span class="emet">→ Cuasiexperimento con grupo control · Producto: registro de implementación</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#3ddc97">
+            <span class="num">OE 3</span>
+            <span class="cuerpo">
+              <span class="et">Comparar el desempeño del grupo intervenido y el del grupo control al final del semestre.</span>
+              <span class="emet">→ Postest y contraste de medias · Producto: estimación del efecto</span>
+            </span>
+          </div>
+        </div>
+        <div class="regla"><span class="rk">Verificación</span>
+          <span>Cada objetivo específico debe corresponder a un capítulo de resultados: ni dos al mismo, ni un capítulo sin objetivo.</span>
+        </div>`
+    }
+  ]
+},
+
+/* ══════════ MÓDULO 06 · PLANTEAMIENTO ══════════ */
+{
+  id:'planteamiento', num:'06', label:'Planteamiento del problema', color:'#3ddc97',
+  desc:'El problema escrito, con cifras y fuentes.',
+  teach:[
+    {
+      titulo:'<span class="em">Estructura</span> del planteamiento del problema.',
+      bajada:'Seis tramos, de lo general a lo específico. Cada uno se apoya en fuentes.',
+      html:`
+        <div class="banda" style="--bc:#3ddc97">
+          <span class="btit">1 · Contexto</span>
+          <div class="chips"><span class="chip">Sector, región y población · informes oficiales · marco normativo</span></div>
+        </div>
+        <div class="banda" style="--bc:#3dd6c4">
+          <span class="btit">2 · Magnitud</span>
+          <div class="chips"><span class="chip">Porcentajes · tasas · series de tiempo · comparación regional</span></div>
+        </div>
+        <div class="banda" style="--bc:#8a7dff">
+          <span class="btit">3 · Causas</span>
+          <div class="chips"><span class="chip">Las causas del árbol, cada una con la fuente que la documenta</span></div>
+        </div>
+        <div class="banda" style="--bc:#ff5d7a">
+          <span class="btit">4 · Efectos</span>
+          <div class="chips"><span class="chip">Consecuencias documentadas · costo social o económico</span></div>
+        </div>
+        <div class="banda" style="--bc:#e8b04b">
+          <span class="btit">5 · Vacío</span>
+          <div class="chips"><span class="chip">Se ha estudiado en otro contexto, con otra población o con otro método</span></div>
+        </div>
+        <div class="banda" style="--bc:#ff6b3d">
+          <span class="btit">6 · Cierre</span>
+          <div class="chips"><span class="chip">Pregunta de investigación y objetivo general</span></div>
+        </div>`
+    },
+    {
+      titulo:'Redacción del planteamiento <span class="em">con datos</span>.',
+      html:`
+        <div class="duo">
+          <div class="caja mal">
+            <span class="cabe">✗ Sin datos</span>
+            <p>«En Colombia existe una grave problemática en la educación rural, ya que muchos estudiantes presentan bajos niveles de aprendizaje en matemáticas debido a diversas causas, lo cual genera consecuencias muy negativas.»</p>
+          </div>
+          <div class="caja bien">
+            <span class="cabe">✓ Con datos y fuente</span>
+            <p>«En las pruebas nacionales más recientes, los estudiantes de sedes rurales obtuvieron en promedio 38 puntos menos en matemáticas que los de sedes urbanas (Ministerio de Educación, 2024). En el departamento estudiado, el 62 % de los estudiantes de 9.º se ubicó en el nivel de desempeño más bajo (ICFES, 2024).»</p>
+          </div>
+        </div>
+        <div class="banda fija" style="--bc:#3ddc97">
+          <span class="btit">Secuencia de trabajo con IA</span>
+          <div class="chips">
+            <span class="chip"><b>Prompt 1</b> · buscar fuentes con datos: PDF, revisadas por pares, últimos 10 años</span>
+            <span class="chip"><b>Prompt 2</b> · redactar únicamente con esas fuentes, ya subidas al chat</span>
+          </div>
+        </div>
+        <div class="regla"><span class="rk">Regla</span>
+          <span>Sin fuentes subidas, el modelo inventa referencias. Lo que no esté en ellas se marca como [VERIFICAR].</span>
+        </div>
+        <div class="nota">Ejemplo pedagógico: las cifras y las fuentes citadas son ilustrativas.</div>`
+    }
+  ]
+},
+
+/* ══════════ MÓDULO 07 · JUSTIFICACIÓN ══════════ */
+{
+  id:'justificacion', num:'07', label:'Justificación', color:'#ff7e5f',
+  desc:'Por qué debe hacerse el estudio y a quién le sirve.',
+  teach:[
+    {
+      titulo:'<span class="em">Justificación</span> frente a planteamiento.',
+      html:`
+        <div class="duo">
+          <div class="caja" style="border-color:#3ddc97">
+            <span class="cabe" style="color:#3ddc97">Planteamiento</span>
+            <span class="cita">¿Qué está pasando y por qué?</span>
+            <p>Objeto: el problema — magnitud, causas, efectos.</p>
+          </div>
+          <div class="caja" style="border-color:#ff7e5f">
+            <span class="cabe" style="color:#ff7e5f">Justificación</span>
+            <span class="cita">¿Por qué debe estudiarse, así, ahora, y a quién le sirve?</span>
+            <p>Objeto: la investigación — aporte, oportunidad, beneficiarios.</p>
+          </div>
+        </div>
+        <div class="banda fija" style="--bc:#ff7e5f">
+          <span class="btit">Los seis argumentos</span>
+          <div class="chips">
+            <span class="chip"><b>1 Vacío</b> · qué no se ha estudiado</span>
+            <span class="chip"><b>2 Teórica</b> · aporte al conocimiento del campo</span>
+            <span class="chip"><b>3 Práctica / social</b> · a quién beneficia</span>
+            <span class="chip"><b>4 Novedad</b> · qué hace distinto el enfoque</span>
+            <span class="chip"><b>5 Viabilidad</b> · con qué recursos y accesos se cuenta</span>
+            <span class="chip"><b>6 Pertinencia</b> · encaje disciplinar y regional</span>
+          </div>
+        </div>
+        <div class="regla"><span class="rk">Verificación</span>
+          <span>Si la justificación sigue describiendo el fenómeno y no el estudio, está repitiendo el planteamiento.</span>
+        </div>`
+    },
+    {
+      titulo:'Los seis <span class="em">argumentos</span>, redactados.',
+      html:`
+        <div class="escalera">
+          <div class="escalon" style="--pc:#e8b04b">
+            <span class="num">1</span><span class="cuerpo">
+              <span class="et">Vacío de conocimiento</span>
+              <span class="ee">«La práctica guiada se ha evaluado en contextos urbanos de la región, pero no hay estudios que la midan en sedes rurales multigrado.»</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#8a7dff">
+            <span class="num">2</span><span class="cuerpo">
+              <span class="et">Relevancia teórica</span>
+              <span class="ee">«Pone a prueba el modelo de práctica deliberada en condiciones de aula multigrado, donde sus supuestos no se han verificado.»</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#3ddc97">
+            <span class="num">3</span><span class="cuerpo">
+              <span class="et">Relevancia práctica y social</span>
+              <span class="ee">«Ocho instituciones reciben una estrategia probada y sin costo; la secretaría de educación, evidencia para orientar su inversión.»</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#ff6b3d">
+            <span class="num">4</span><span class="cuerpo">
+              <span class="et">Novedad</span>
+              <span class="ee">«Combina medición estandarizada y seguimiento semanal en aula, que los estudios previos aplican por separado.»</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#36b3f0">
+            <span class="num">5</span><span class="cuerpo">
+              <span class="et">Viabilidad</span>
+              <span class="ee">«Se cuenta con el aval de las ocho instituciones, instrumentos validados y un semestre de campo dentro del calendario escolar.»</span>
+            </span>
+          </div>
+          <div class="escalon" style="--pc:#ff5d7a">
+            <span class="num">6</span><span class="cuerpo">
+              <span class="et">Pertinencia disciplinar y regional</span>
+              <span class="ee">«Responde a la línea de calidad educativa del programa y a la prioridad de cierre de brechas rurales del plan departamental.»</span>
+            </span>
+          </div>
+        </div>
+        <div class="nota">Cada argumento nombra un beneficiario y un aporte concreto. Ejemplos ilustrativos.</div>`
+    }
+  ]
+}
+];
+
+const PROMPTS = [
+  /* MÓDULO 01 · Línea de investigación */
+  {
+    moduleId:'linea', moduleLabel:'Línea de investigación', moduleNum:'01',
+    promptNum:'01', promptTotal:'02',
+    title:'Asesor de investigación · líneas posibles',
+    color:'#ff6b3d',
+    fields:[
+      {key:'campo', label:'Campo', placeholder:'ej. educación rural', rows:1},
+      {key:'tema', label:'Tema', placeholder:'ej. uso de IA en aula', rows:2}
+    ],
+    template:`Actúa como asesor de investigación en [campo]. Estoy explorando [tema]. Dame 5 líneas posibles con: problema, pregunta inicial, población, datos y dificultad. No inventes citas.`
+  },
+  {
+    moduleId:'linea', moduleLabel:'Línea de investigación', moduleNum:'01',
+    promptNum:'02', promptTotal:'02',
+    title:'Director de tesis · 10 problemas',
+    color:'#ff6b3d',
+    fields:[
+      {key:'campo', label:'Campo / disciplina', placeholder:'ej. ingeniería ambiental', rows:1},
+      {key:'tema', label:'Tema inicial', placeholder:'ej. gestión de residuos sólidos', rows:2},
+      {key:'contexto', label:'Región / población', placeholder:'ej. Bogotá, hogares estrato 2', rows:1}
+    ],
+    template:`Actúa como director de tesis exigente en [campo].
+Mi tema inicial es [tema], en el contexto de [contexto].
+Genera 10 problemas de investigación distintos a partir de ese tema. Cada uno con:
+  · una tensión o vacío concreto,
+  · un contexto delimitado (lugar, población, periodo),
+  · una pista de por qué importa.
+Numéralos del 1 al 10, sin repetir el ángulo. No inventes citas; señala qué
+tendría que verificar yo en literatura real.`
+  },
+
+  /* MÓDULO 02 · Árbol de problema */
+  {
+    moduleId:'arbol', moduleLabel:'Árbol de problema', moduleNum:'02',
+    promptNum:'01', promptTotal:'01',
+    title:'Causas raíz · intermedias · efectos',
+    color:'#3dd6c4',
+    fields:[
+      {key:'problema', label:'Problema elegido', placeholder:'pega aquí el problema seleccionado del prompt anterior', rows:4}
+    ],
+    template:`Mi problema es:
+«[problema]».
+
+Devuelve una tabla con tres columnas:
+  1. Causas raíz (3-5)
+  2. Causas intermedias (3-5)
+  3. Efectos observables (3-5)
+
+Sin citas inventadas. Marca cuáles son hipótesis y cuáles
+son hechos documentables que yo debería verificar en
+literatura.`
+  },
+
+  /* MÓDULO 03 · Preguntas */
+  {
+    moduleId:'preguntas', moduleLabel:'Preguntas de investigación', moduleNum:'03',
+    promptNum:'01', promptTotal:'01',
+    title:'3 preguntas desde el árbol',
+    color:'#e8b04b',
+    fields:[
+      {key:'problema', label:'Problema', placeholder:'pega el problema', rows:3},
+      {key:'causas', label:'Causas clave (del árbol)', placeholder:'lista de causas clave del árbol', rows:3},
+      {key:'efectos', label:'Efectos clave (del árbol)', placeholder:'lista de efectos clave del árbol', rows:3}
+    ],
+    template:`A partir de:
+  · Problema: «[problema]»
+  · Causas clave: [causas]
+  · Efectos clave: [efectos]
+
+Propón 3 preguntas de investigación distintas, cada una con un ángulo:
+  1. Centrada en magnitud / descripción del problema,
+  2. Centrada en relación causa → efecto,
+  3. Centrada en una intervención o solución posible.
+
+Cada pregunta con variables claras, contexto y desenlace medible.
+Señala cuál es más viable y por qué. Sin citas inventadas.`
+  },
+
+  /* MÓDULO 04 · Objetivo general */
+  {
+    moduleId:'general', moduleLabel:'Objetivo general', moduleNum:'04',
+    promptNum:'01', promptTotal:'01',
+    title:'4 alternativas de objetivo general',
+    color:'#8a7dff',
+    fields:[
+      {key:'problema', label:'Problema', placeholder:'pega el problema', rows:3},
+      {key:'causasEfectos', label:'Causas y efectos clave', placeholder:'resumen del árbol', rows:3},
+      {key:'pregunta', label:'Pregunta de investigación', placeholder:'pega la pregunta elegida', rows:2}
+    ],
+    template:`Tengo esta tríada:
+  · Problema: «[problema]»
+  · Causas y efectos clave: [causasEfectos]
+  · Pregunta de investigación: «[pregunta]»
+
+Propón 4 alternativas de objetivo general, cada una con un ángulo distinto:
+  1. Descriptivo (caracterizar / cuantificar)
+  2. Comparativo (comparar / contrastar)
+  3. Explicativo (determinar relación / efecto)
+  4. Aplicado (evaluar intervención / proponer solución)
+
+Cada uno con verbo medible, alcance realista y método implicado.
+Señala cuál es la más viable para una tesis y por qué.`
+  },
+
+  /* MÓDULO 05 · Objetivos específicos */
+  {
+    moduleId:'especificos', moduleLabel:'Objetivos específicos', moduleNum:'05',
+    promptNum:'01', promptTotal:'01',
+    title:'3 paquetes alternativos de específicos',
+    color:'#36b3f0',
+    fields:[
+      {key:'pregunta', label:'Pregunta de investigación', placeholder:'pega la pregunta', rows:2},
+      {key:'general', label:'Objetivo general', placeholder:'pega el objetivo general elegido', rows:2}
+    ],
+    template:`Tengo:
+  · Pregunta de investigación: «[pregunta]»
+  · Objetivo general: «[general]»
+
+Propón 3 paquetes alternativos de objetivos específicos (3 por paquete = 9 en total).
+Cada paquete debe representar una RUTA distinta para alcanzar el general:
+  Paquete A — ruta descriptiva / diagnóstica
+  Paquete B — ruta analítica / explicativa
+  Paquete C — ruta aplicada / propositiva
+
+Reglas: cada específico con verbo medible, secuencia lógica (de lo simple a lo
+complejo), sin sobrar ni faltar respecto del general. Indica qué método implica
+cada paquete y cuál es el más viable para una tesis.`
+  },
+
+  /* MÓDULO 06 · Planteamiento */
+  {
+    moduleId:'planteamiento', moduleLabel:'Planteamiento del problema', moduleNum:'06',
+    promptNum:'01', promptTotal:'02',
+    title:'Fuentes con datos y estadísticas',
+    color:'#3ddc97',
+    fields:[
+      {key:'problema', label:'Problema', placeholder:'pega el problema', rows:3},
+      {key:'pregunta', label:'Pregunta', placeholder:'pega la pregunta', rows:2},
+      {key:'general', label:'Objetivo general', placeholder:'pega el objetivo general', rows:2}
+    ],
+    template:`// fuentes con datos y estadísticas
+
+Actúa como investigador rastreador de fuentes. Realiza una búsqueda profunda en la web para mi investigación:
+· Problema: «[problema]»
+· Pregunta: «[pregunta]»
+· Objetivo general: «[general]»
+
+Encuéntrame fuentes que cumplan TODAS estas condiciones:
+1. Estén disponibles como PDF accesible en internet.
+2. Sean artículos científicos revisados por pares o informes de organizaciones reconocidas (OMS, FAO, BID, CEPAL, ministerios, universidades).
+3. Contengan métricas, datos o estadísticas sobre magnitud del problema, causas o efectos.
+4. Publicadas preferentemente en los últimos 10 años.`
+  },
+  {
+    moduleId:'planteamiento', moduleLabel:'Planteamiento del problema', moduleNum:'06',
+    promptNum:'02', promptTotal:'02',
+    title:'Redacción · APA 7 · 1500-2000 palabras',
+    color:'#3ddc97',
+    fields:[
+      {key:'problema', label:'Problema central', placeholder:'pega el problema', rows:3},
+      {key:'causas', label:'Causas (raíz e intermedias)', placeholder:'lista de causas del árbol', rows:3},
+      {key:'efectos', label:'Efectos clave', placeholder:'lista de efectos del árbol', rows:3},
+      {key:'pregunta', label:'Pregunta', placeholder:'pega la pregunta', rows:2},
+      {key:'general', label:'Objetivo general', placeholder:'pega el objetivo general', rows:2}
+    ],
+    template:`// planteamiento · APA 7 · 1500-2000 palabras
+
+Actúa como redactor académico riguroso. Usando únicamente las fuentes que subí, redacta el planteamiento del problema con esta información:
+· Problema central: «[problema]»
+· Causas (raíz e intermedias): [causas]
+· Efectos clave: [efectos]
+· Pregunta: «[pregunta]»
+· Objetivo general: «[general]»
+
+Reglas:
+1. Estructura: contexto → magnitud → causas → efectos → vacío → relevancia.
+2. Apóyate solo en mis fuentes.
+3. Incluye métricas, datos y estadísticas que den magnitud al problema.
+4. Cita en el texto en APA 7 (Autor, año).
+5. Extensión: 1500 a 2000 palabras.
+6. Al final, sección «Referencias» en APA 7, ordenadas alfabéticamente, con DOI o enlace al PDF.
+7. Lo que no esté en las fuentes, márcalo como [VERIFICAR]; no inventes citas.`
+  },
+
+  /* MÓDULO 07 · Justificación */
+  {
+    moduleId:'justificacion', moduleLabel:'Justificación', moduleNum:'07',
+    promptNum:'01', promptTotal:'02',
+    title:'Fuentes para justificar',
+    color:'#ff7e5f',
+    fields:[
+      {key:'problema', label:'Problema', placeholder:'pega el problema', rows:3},
+      {key:'pregunta', label:'Pregunta', placeholder:'pega la pregunta', rows:2},
+      {key:'general', label:'Objetivo general', placeholder:'pega el objetivo general', rows:2}
+    ],
+    template:`Actúa como investigador rastreador de fuentes. Realiza una búsqueda profunda en la web para justificar mi investigación:
+  · Problema: «[problema]»
+  · Pregunta: «[pregunta]»
+  · Objetivo general: «[general]»
+
+Encuéntrame fuentes que cumplan TODAS estas condiciones:
+  1. Estén disponibles como PDF accesible en internet.
+  2. Sean artículos científicos revisados por pares, políticas públicas o informes de organizaciones reconocidas (OMS, FAO, BID, CEPAL, ministerios, universidades).
+  3. Aporten evidencia sobre vacío de conocimiento, relevancia social, beneficio práctico, novedad o pertinencia disciplinar / regional.
+  4. Publicadas preferentemente en los últimos 10 años.`
+  },
+  {
+    moduleId:'justificacion', moduleLabel:'Justificación', moduleNum:'07',
+    promptNum:'02', promptTotal:'02',
+    title:'Redacción · APA 7 · 800-1200 palabras',
+    color:'#ff7e5f',
+    fields:[
+      {key:'problema', label:'Problema central', placeholder:'pega el problema', rows:3},
+      {key:'pregunta', label:'Pregunta', placeholder:'pega la pregunta', rows:2},
+      {key:'general', label:'Objetivo general', placeholder:'pega el objetivo general', rows:2},
+      {key:'beneficiarios', label:'Beneficiarios', placeholder:'grupos / sectores impactados', rows:2}
+    ],
+    template:`Actúa como redactor académico riguroso. Usando únicamente las fuentes que subí, redacta la justificación del estudio con esta información:
+  · Problema central: «[problema]»
+  · Pregunta: «[pregunta]»
+  · Objetivo general: «[general]»
+  · Beneficiarios: [beneficiarios]
+
+Reglas:
+  1. Estructura: vacío de conocimiento → relevancia teórica → relevancia práctica / social → novedad → viabilidad → pertinencia disciplinar / regional.
+  2. Apóyate solo en mis fuentes.
+  3. Incluye datos, métricas o evidencia que respalden cada argumento.
+  4. Cita en el texto en APA 7 (Autor, año).
+  5. Extensión: 800 a 1200 palabras.
+  6. Al final, sección «Referencias» en APA 7, ordenadas alfabéticamente, con DOI o enlace al PDF.
+  7. Lo que no esté en las fuentes, márcalo como [VERIFICAR]; no inventes citas.`
+  }
+];
+
+/* claves que se sincronizan entre prompts */
+const SHARED_KEYS = new Set([
+  'campo','tema','contexto','problema','pregunta','general','causas','efectos',
+  'causasEfectos','beneficiarios'
+]);
+
+/* ============================================================
+   RENDER · explicación + generador, módulo por módulo
+============================================================ */
+const deck = document.getElementById('deck');
+const moduleStart = {};   /* moduleId → índice de su primera diapositiva */
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function appendTeachSlide(m, t){
+  const slide = document.createElement('section');
+  slide.className = 'slide teach';
+  slide.style.setProperty('--c', m.color);
+  slide.innerHTML = `
+    <div class="spread">
+      <div class="kicker reveal">Módulo ${m.num} · ${m.label}</div>
+      <h2 class="reveal">${t.titulo}</h2>
+      ${t.bajada ? `<p class="lead reveal">${t.bajada}</p>` : ''}
+      <div class="dia reveal">${t.html}</div>
+    </div>`;
+  deck.appendChild(slide);
+}
+
+function appendToolSlide(p, idx){
+  const slide = document.createElement('section');
+  slide.className = 'slide tool';
+  slide.dataset.tool = idx;
+  slide.style.setProperty('--c', p.color);
+
+  const fieldsHtml = p.fields.map(f=>{
+    const shared = SHARED_KEYS.has(f.key) ? '<span class="shared-badge" title="Se sincroniza entre prompts">↔ compartido</span>' : '';
+    return `
+    <div class="field-block">
+      <label for="t${idx}_${f.key}">${f.label}${shared}</label>
+      <textarea id="t${idx}_${f.key}" data-key="${f.key}" data-tool="${idx}"
+                rows="${f.rows||2}" placeholder="${f.placeholder}"></textarea>
+    </div>`;
+  }).join('');
+
+  slide.innerHTML = `
+    <div class="tool-stack">
+      <div class="ptop reveal">
+        <span class="sbadge">Módulo ${p.moduleNum} · Prompt ${p.promptNum}/${p.promptTotal}</span>
+        <span class="sname">${p.moduleLabel} · ${p.title}</span>
+      </div>
+      <div class="tool-grid reveal">
+        <div class="form-pane">
+          <div class="pane-head">
+            <span>Tus datos</span>
+            <span class="pane-hint">se guardan en tu navegador</span>
+          </div>
+          <div class="form-body">${fieldsHtml}</div>
+          <div class="form-actions">
+            <button class="btn reset-tool" data-tool="${idx}">Limpiar este prompt</button>
+          </div>
+        </div>
+        <div class="preview-pane">
+          <div class="pane-head">
+            <span>Prompt generado</span>
+            <span class="pane-hint">vista previa en vivo</span>
+          </div>
+          <div class="preview-body" id="preview_${idx}"></div>
+          <div class="preview-actions">
+            <span class="status" id="status_${idx}">Sin completar</span>
+            <button class="btn copy-raw" data-tool="${idx}">Plantilla</button>
+            <button class="btn primary copy-filled" data-tool="${idx}">📋 Copiar prompt</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  deck.appendChild(slide);
+}
+
+function renderDeck(){
+  MODULOS.forEach(m=>{
+    moduleStart[m.id] = deck.querySelectorAll('.slide').length;
+    m.teach.forEach(t=>appendTeachSlide(m, t));
+    PROMPTS.forEach((p, idx)=>{ if(p.moduleId===m.id) appendToolSlide(p, idx); });
+  });
+}
+
+function renderTOC(){
+  const grid = document.getElementById('tocGrid');
+  const tarjetas = MODULOS.map(m=>{
+    const nP = PROMPTS.filter(p=>p.moduleId===m.id).length;
+    const nT = m.teach.length;
+    return `
+    <a class="toc-card" data-jump="${moduleStart[m.id]}" style="--c:${m.color}">
+      <span class="t-num">Módulo ${m.num}</span>
+      <span class="t-title">${m.label}</span>
+      <span class="t-desc">${m.desc}</span>
+      <span class="t-count">${nT>1?nT+' explicaciones':'1 explicación'} · ${nP} prompt${nP>1?'s':''}</span>
+      <span class="t-go">Entrar <span class="arr" aria-hidden="true">→</span></span>
+    </a>`;
+  }).join('');
+
+  /* última casilla: esquema animado de la cadena */
+  const esquema = `
+    <div class="toc-flow" aria-hidden="true">
+      <span class="tf-k">La cadena</span>
+      <div class="tf-linea">
+        <span>Problema</span>
+        <span>Pregunta</span>
+        <span>Objetivo general</span>
+        <span>Objetivos específicos</span>
+        <span>Planteamiento y justificación</span>
+      </div>
+    </div>`;
+
+  grid.innerHTML = tarjetas + esquema;
+  grid.querySelectorAll('.toc-card').forEach(c=>{
+    c.addEventListener('click',()=>{
+      const j = parseInt(c.dataset.jump,10);
+      if(!Number.isNaN(j)) go(j);
+    });
+  });
+}
+
+/* ============================================================
+   LÓGICA · preview, copiar, sincronización, persistencia
+============================================================ */
+const STORE_KEY = 'faseLogica_v1';
+
+function loadStore(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'{}'); }
+  catch(e){ return {}; }
+}
+function saveStore(data){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){}
+}
+
+function getToolValues(idx){
+  const p = PROMPTS[idx];
+  const values = {};
+  p.fields.forEach(f=>{
+    const ta = document.querySelector(`textarea[data-tool="${idx}"][data-key="${CSS.escape(f.key)}"]`);
+    values[f.key] = ta ? ta.value : '';
+  });
+  return values;
+}
+
+function fillTemplate(p, values){
+  let out = p.template;
+  p.fields.forEach(f=>{
+    const v = (values[f.key]||'').trim();
+    const re = new RegExp('\\['+f.key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\]','g');
+    out = out.replace(re, v || ('['+f.key+']'));
+  });
+  return out;
+}
+
+function updatePreview(idx){
+  const p = PROMPTS[idx];
+  const values = getToolValues(idx);
+  const preview = document.getElementById('preview_'+idx);
+  if(!preview) return;
+
+  /* resaltado de marcadores: vacío=dorado, lleno=turquesa */
+  let html = escapeHtml(p.template);
+  let filled = 0, total = p.fields.length;
+  p.fields.forEach(f=>{
+    const v = (values[f.key]||'').trim();
+    const re = new RegExp('\\['+f.key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\]','g');
+    if(v){
+      filled++;
+      html = html.replace(re, '<span class="ph-filled">'+escapeHtml(v)+'</span>');
+    } else {
+      html = html.replace(re, '<span class="ph-empty">['+f.key+']</span>');
+    }
+  });
+  preview.innerHTML = html;
+
+  const status = document.getElementById('status_'+idx);
+  if(status){
+    if(filled===0) status.textContent = 'Sin completar';
+    else if(filled<total) status.textContent = filled+' de '+total+' campos';
+    else status.textContent = '✓ Listo para copiar';
+  }
+}
+
+function syncValueAcrossSlides(key, value){
+  document.querySelectorAll(`textarea[data-key="${CSS.escape(key)}"]`).forEach(ta=>{
+    if(ta.value !== value) ta.value = value;
+  });
+  PROMPTS.forEach((p,i)=>{
+    if(p.fields.some(f=>f.key===key)) updatePreview(i);
+  });
+}
+
+function persistValue(key, value){
+  const store = loadStore();
+  store[key] = value;
+  saveStore(store);
+}
+
+function restoreValues(){
+  const store = loadStore();
+  Object.keys(store).forEach(key=>{
+    document.querySelectorAll(`textarea[data-key="${CSS.escape(key)}"]`).forEach(ta=>{
+      ta.value = store[key];
+    });
+  });
+  PROMPTS.forEach((_,i)=>updatePreview(i));
+}
+
+function bindToolEvents(){
+  document.querySelectorAll('textarea[data-tool]').forEach(ta=>{
+    ta.addEventListener('input', ()=>{
+      const idx = parseInt(ta.dataset.tool,10);
+      const key = ta.dataset.key;
+      const value = ta.value;
+
+      if(SHARED_KEYS.has(key)){
+        syncValueAcrossSlides(key, value);
+        persistValue(key, value);
+      } else {
+        /* clave no-compartida: guardamos por (idx,key) */
+        const store = loadStore();
+        store['_t'+idx+'_'+key] = value;
+        saveStore(store);
+        updatePreview(idx);
+      }
+    });
+  });
+
+  document.querySelectorAll('button.copy-filled').forEach(btn=>{
+    btn.addEventListener('click', async()=>{
+      const idx = parseInt(btn.dataset.tool,10);
+      const text = fillTemplate(PROMPTS[idx], getToolValues(idx));
+      await copyText(text);
+      flashBtn(btn, '✓ Copiado');
+    });
+  });
+  document.querySelectorAll('button.copy-raw').forEach(btn=>{
+    btn.addEventListener('click', async()=>{
+      const idx = parseInt(btn.dataset.tool,10);
+      await copyText(PROMPTS[idx].template);
+      flashBtn(btn, '✓ Plantilla');
+    });
+  });
+  document.querySelectorAll('button.reset-tool').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.dataset.tool,10);
+      const p = PROMPTS[idx];
+      p.fields.forEach(f=>{
+        const ta = document.querySelector(`textarea[data-tool="${idx}"][data-key="${CSS.escape(f.key)}"]`);
+        if(ta){
+          ta.value = '';
+          if(SHARED_KEYS.has(f.key)){
+            syncValueAcrossSlides(f.key, '');
+            persistValue(f.key, '');
+          } else {
+            const store = loadStore();
+            delete store['_t'+idx+'_'+f.key];
+            saveStore(store);
+          }
+        }
+      });
+      updatePreview(idx);
+    });
+  });
+}
+
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    const tmp = document.createElement('textarea');
+    tmp.value = text; document.body.appendChild(tmp);
+    tmp.select(); document.execCommand('copy'); tmp.remove();
+  }
+}
+
+function flashBtn(btn, text){
+  const orig = btn.textContent;
+  btn.textContent = text;
+  btn.classList.add('ok');
+  setTimeout(()=>{ btn.textContent = orig; btn.classList.remove('ok'); }, 1500);
+}
+
+/* restaurar valores no-compartidos por tool */
+function restoreToolSpecific(){
+  const store = loadStore();
+  Object.keys(store).forEach(k=>{
+    const m = k.match(/^_t(\d+)_(.+)$/);
+    if(!m) return;
+    const idx = parseInt(m[1],10);
+    const key = m[2];
+    const ta = document.querySelector(`textarea[data-tool="${idx}"][data-key="${CSS.escape(key)}"]`);
+    if(ta) ta.value = store[k];
+  });
+}
+
+function resetAll(){
+  if(!confirm('¿Borrar todos los campos de todos los prompts?')) return;
+  localStorage.removeItem(STORE_KEY);
+  document.querySelectorAll('textarea[data-tool]').forEach(ta=>ta.value='');
+  PROMPTS.forEach((_,i)=>updatePreview(i));
+}
+
+/* ============================================================
+   NAVEGACIÓN · slides, dots, progress
+============================================================ */
+let slides = [];
+let i = 0;
+const progress = document.getElementById('progress');
+const counter = document.getElementById('counter');
+const dotsWrap = document.getElementById('dots');
+
+function buildDots(){
+  dotsWrap.innerHTML = '';
+  slides.forEach((s,k)=>{
+    const d = document.createElement('i');
+    if(s.classList.contains('tool')) d.className = 'tool';
+    d.title = s.classList.contains('tool') ? 'Generador de prompt' : 'Explicación';
+    d.onclick = ()=>go(k);
+    dotsWrap.appendChild(d);
+  });
+}
+
+function go(n){
+  i = Math.max(0, Math.min(slides.length-1, n));
+  slides.forEach((s,k)=>s.classList.toggle('active', k===i));
+  progress.style.width = ((i+1)/slides.length*100)+'%';
+  counter.textContent = String(i+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  [...dotsWrap.children].forEach((d,k)=>d.classList.toggle('on', k===i));
+}
+
+function next(){ go(i+1); }
+function prev(){ go(i-1); }
+
+/* tema */
+const themeIcon = document.getElementById('themeIcon');
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  themeIcon.textContent = t==='light' ? '☀' : '☾';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  const nx = cur==='light'?'dark':'light';
+  applyTheme(nx);
+  try{ localStorage.setItem('faseLogicaTheme', nx); }catch(e){}
+}
+(function initTheme(){
+  let saved = 'dark';
+  try{ saved = localStorage.getItem('faseLogicaTheme') || 'dark'; }catch(e){}
+  applyTheme(saved);
+})();
+
+/* ============================================================
+   INIT
+============================================================ */
+renderDeck();
+renderTOC();
+slides = [...deck.querySelectorAll('.slide')];
+buildDots();
+bindToolEvents();
+restoreValues();
+restoreToolSpecific();
+PROMPTS.forEach((_,k)=>updatePreview(k));
+go(0);
+
+document.getElementById('next').onclick = next;
+document.getElementById('prev').onclick = prev;
+document.getElementById('home').onclick = ()=>go(1);
+document.getElementById('themeToggle').onclick = toggleTheme;
+document.getElementById('resetAll').onclick = resetAll;
+
+addEventListener('keydown', e=>{
+  const t = e.target.tagName;
+  if(t==='INPUT'||t==='TEXTAREA') return;
+  if(e.key==='ArrowRight'||e.key===' ') next();
+  if(e.key==='ArrowLeft') prev();
+  if(e.key==='f'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+  if(e.key==='t'||e.key==='T') toggleTheme();
+  if(e.key==='i'||e.key==='I') go(1);
+  if(e.key==='r'||e.key==='R') resetAll();
+});
+</script>
+</body>
+</html>
